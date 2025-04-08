@@ -1,14 +1,23 @@
-try :
+import os
+print(f'[*] Lancement {os.path.basename(__file__)}')
+try:
     import kagglehub
     import shutil
-    import os
     import pandas as pd
     from PIL import Image
 except ImportError:
-    try :
+    try:
         os.system('pip install -r requirements.txt')
-    except :
+    except:
         print('Erreur d\'installation des dépendances')
+
+# Vérifier et créer le dossier 'img' s'il n'existe pas
+img_dir = 'img'
+if not os.path.exists(img_dir):
+    os.makedirs(img_dir)
+    print(f"[*] Dossier '{img_dir}' créé avec succès.")
+else:
+    print(f"[*] Le dossier '{img_dir}' existe déjà.")
 
 if not os.path.exists('adni_dataset'):
     try:
@@ -31,14 +40,20 @@ csv_path = os.path.join('adni_dataset', 'train.csv')
 try:
     df = pd.read_csv(csv_path)
 
-    print("###################Train.csv ###################")
+    print("################### Train.csv ###################")
     print(df.head())
-    print("...\n##############################################")
+    print("...\n################################################")
 
-    image_path = os.path.join('adni_dataset', 'ADNI_IMAGES', df.iloc[0, 0])
+    image_name = df.iloc[0, 0]
+
+    folder_name = image_name.split('-')[0]
+
+    image_path = os.path.join('adni_dataset', 'ADNI_IMAGES', 'png_images', folder_name, image_name)
+    image_path += '.png'
     print(image_path)
-    #image = Image.open(image_path)
-    #image.show()
+
+    image = Image.open(image_path)
+    image.show()
 except FileNotFoundError:
     print("[!] Le fichier CSV ou l'image spécifiée n'existe pas.")
 except Exception as e:
