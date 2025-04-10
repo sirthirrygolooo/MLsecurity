@@ -7,10 +7,10 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         h1 { text-align: center; }
-        h1, h2, h3 { color: #bebaba; }
+        h1, h2, h3 { color: #575757; }
         .section { margin-bottom: 20px; }
-        .objectives, .activities, .results, .analysis { padding: 10px; border-left: 4px solid #007BFF; }
-        .objectives h2, .activities h2, .results h2, .analysis h2 { border-bottom: 2px solid #007BFF; padding-bottom: 5px; }
+        .objectives, .activities, .results, .analysis { padding: 10px; border-left: 4px solid #605f5f; }
+        .objectives h2, .activities h2, .results h2, .analysis h2 { border-bottom: 2px solid #bebaba; padding-bottom: 5px; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -28,11 +28,11 @@
 
 <div class="section objectives">
     <h2>Weekly Objectives</h2>
-    <p>Voici les objectifs que je me suis fixé pour cette semaine : </p>
+    <p>Here are the objectives I set for this week:</p>
     <ul>
         <li><strong>Objective 1:</strong> Understand the subject and its challenges</li>
         <li><strong>Objective 2:</strong> Appropriate it and test initial things</li>
-        <li><strong>Objective 3:</strong> Appropriate it and test initial things</li>
+        <li><strong>Objective 3:</strong> Selection of an interesting and complete dataset</li>
         <li><strong>Objective 4:</strong> Conduct initial tests</li>
     </ul>
 </div>
@@ -41,25 +41,25 @@
     <h2>Activities Completed</h2>
     <h3>Monday</h3>
     <ul>
-        <li>Recherches sur les différents types d'attaques, leur fonctionnement et enjeux</li>
-        <li>Analyse de chacune pour voir à quel niveau de la chaine du ML elles opèrent, leur force et faiblesses</li>
-        <li>Premiers tests de Data Poisoning sur un petit dataset (~1200 lignes) : pas très concluants</li>
+        <li>Research on different types of attacks, their mechanisms, and implications</li>
+        <li>Analysis of each to see at which level of the ML chain they operate, their strengths and weaknesses</li>
+        <li>Initial Data Poisoning tests on a small dataset (~1200 rows): not very conclusive</li>
     </ul>
     <h3>Tuesday</h3>
     <ul>
-        <li>Recherches plus approfondies et focus particulier sur les attaques Adversaires</li>
-        <li>Choix de datasets plus intéressants pour établir mes tests</li>
-        <li>Elaboration d'un premier lab basé sur un dataset d'images IRM pour détection de la maladie d'Alzheimer</li>
+        <li>More in-depth research with a particular focus on Adversarial attacks</li>
+        <li>Selection of more interesting datasets for my tests</li>
+        <li>Development of a first lab based on an MRI image dataset for Alzheimer's disease detection</li>
     </ul>
     <h3>Wednesday</h3>
     <ul>
-        <li>Amélioration du lab pour implémenter les premiers cas d'attaques avec ART</li>
-        <li>Focus sur les attaques adversaires par inversion : FGSM et PGD</li>
+        <li>Improvement of the lab to implement initial attack cases with ART</li>
+        <li>Focus on adversarial attacks by inversion: FGSM and PGD</li>
     </ul>
     <h3>Thursday</h3>
     <ul>
-        <li>Implémention des attaques FGSM et PGD, analyse des résultats</li>
-        <li>Recherches sur les moyens de défense contre ces attaques</li>
+        <li>Implementation of FGSM and PGD attacks, analysis of results</li>
+        <li>Research on defense mechanisms against these attacks</li>
     </ul>
     <h3>Friday</h3>
     <ul>
@@ -97,8 +97,8 @@
 <div class="section">
     <h2>Difficulties Encountered</h2>
     <ul>
-        <li><strong>Problem 1:</strong> Pour les premiers tests, dataset trop pauvre.</li>
-        <li><strong>Problem 2:</strong> Beaucoup de problèmes de compatbilité entre les libs python</li>
+        <li><strong>Problem 1:</strong> For the initial tests, the dataset was too limited.</li>
+        <li><strong>Problem 2:</strong> Many compatibility issues between Python libraries</li>
     </ul>
 </div>
 
@@ -111,13 +111,13 @@
 </div>
 
 <div class="section">
-    <h2>Notes / Improvments</h2>
-    <p>RAS</p>
+    <h2>Notes / Improvements</h2>
+    <p>None</p>
 </div>
 
 <div class="section">
     <h2>Signature</h2>
-    <p>FROEHLY Jean-Baptiste le Vendredi 11/04</p>
+    <p>FROEHLY Jean-Baptiste, Friday 11/04</p>
 </div>
 
 </body>

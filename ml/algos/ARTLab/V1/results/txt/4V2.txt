@@ -1,0 +1,155 @@
+[*] Using device: cuda
+[*] GPU Name: NVIDIA GeForce RTX 4060 Laptop GPU
+[*] CUDA Version: 12.6
+[*] GPU Memory: 8.00 GB
+[TIME] prepare_data executed in 0.01 seconds
+[*] Training initial model...
+[+] Epoch 1/10 - Loss: 1.2988 - Acc: 0.4207 - Time: 35.99s
+[+] Epoch 2/10 - Loss: 0.8799 - Acc: 0.5964 - Time: 28.20s
+[+] Epoch 3/10 - Loss: 0.6580 - Acc: 0.6725 - Time: 28.05s
+[+] Epoch 4/10 - Loss: 0.5246 - Acc: 0.7220 - Time: 28.65s
+[+] Epoch 5/10 - Loss: 0.4536 - Acc: 0.7481 - Time: 28.81s
+[+] Epoch 6/10 - Loss: 0.4148 - Acc: 0.7595 - Time: 28.85s
+[+] Epoch 7/10 - Loss: 0.3843 - Acc: 0.7637 - Time: 28.55s
+[+] Epoch 8/10 - Loss: 0.3742 - Acc: 0.7722 - Time: 27.57s
+[+] Epoch 9/10 - Loss: 0.3642 - Acc: 0.7722 - Time: 27.40s
+[+] Epoch 10/10 - Loss: 0.3581 - Acc: 0.7778 - Time: 27.72s
+[TIME] train_model executed in 289.79 seconds
+
+[*] Clean evaluation:
+Accuracy: 0.7791
+Average inference time per batch: 0.0010 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.48      0.47      0.47       834
+           1       1.00      1.00      1.00       807
+           2       0.99      0.99      0.99       778
+           3       0.99      0.99      0.99       809
+           4       0.47      0.48      0.47       824
+
+    accuracy                           0.78      4052
+   macro avg       0.78      0.78      0.78      4052
+weighted avg       0.78      0.78      0.78      4052
+
+[TIME] evaluate_model executed in 6.23 seconds
+
+=== Evasion Attacks ===
+
+[*] Attack: FGSM (ε=0.2)
+Accuracy: 0.4173
+Average attack+inference time per batch: 0.0362 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.45      0.36      0.40       834
+           1       0.47      0.43      0.45       807
+           2       0.36      0.43      0.39       778
+           3       0.48      0.45      0.46       809
+           4       0.36      0.41      0.38       824
+
+    accuracy                           0.42      4052
+   macro avg       0.42      0.42      0.42      4052
+weighted avg       0.42      0.42      0.42      4052
+
+[TIME] test_evasion_attack executed in 9.34 seconds
+
+[*] Attack: PGD (ε=0.2, iter=10)
+Accuracy: 0.2648
+Average attack+inference time per batch: 0.1489 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.39      0.28      0.33       834
+           1       0.29      0.28      0.29       807
+           2       0.19      0.30      0.23       778
+           3       0.29      0.27      0.28       809
+           4       0.24      0.20      0.22       824
+
+    accuracy                           0.26      4052
+   macro avg       0.28      0.27      0.27      4052
+weighted avg       0.28      0.26      0.27      4052
+
+[TIME] test_evasion_attack executed in 23.73 seconds
+
+=== Adversarial Training ===
+Precompute adv samples: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<?, ?it/s]
+Adversarial training epochs: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 15/15 [07:01<00:00, 28.12s/it]
+[TIME] adversarial_training executed in 460.06 seconds
+
+[*] Evaluation under after defense attack:
+Accuracy: 0.7853
+Average inference time per batch: 0.0019 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.47      0.30      0.36       834
+           1       1.00      1.00      1.00       807
+           2       1.00      1.00      1.00       778
+           3       1.00      1.00      1.00       809
+           4       0.48      0.66      0.56       824
+
+    accuracy                           0.79      4052
+   macro avg       0.79      0.79      0.78      4052
+weighted avg       0.78      0.79      0.78      4052
+
+[TIME] evaluate_model executed in 8.15 seconds
+
+[*] Attack: FGSM (after defense)
+Accuracy: 0.7823
+Average attack+inference time per batch: 0.0432 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.46      0.30      0.36       834
+           1       1.00      1.00      1.00       807
+           2       1.00      1.00      1.00       778
+           3       1.00      1.00      1.00       809
+           4       0.48      0.64      0.55       824
+
+    accuracy                           0.78      4052
+   macro avg       0.79      0.79      0.78      4052
+weighted avg       0.78      0.78      0.78      4052
+
+[TIME] test_evasion_attack executed in 11.51 seconds
+
+[*] Attack: PGD (after defense)
+Accuracy: 0.7813
+Average attack+inference time per batch: 0.1573 seconds
+
+Classification Report:
+              precision    recall  f1-score   support
+
+           0       0.46      0.33      0.39       834
+           1       0.99      1.00      1.00       807
+           2       1.00      0.99      1.00       778
+           3       1.00      1.00      1.00       809
+           4       0.48      0.61      0.54       824
+
+    accuracy                           0.78      4052
+   macro avg       0.79      0.79      0.78      4052
+weighted avg       0.78      0.78      0.78      4052
+
+[TIME] test_evasion_attack executed in 25.69 seconds
+
+=== Final Summary ===
+
+Accuracy Metrics:
+Initial clean accuracy: 0.7791
+Accuracy under FGSM attack: 0.4173 (Drop: 0.3618)
+Accuracy under PGD attack: 0.2648 (Drop: 0.5143)
+Clean accuracy after defense: 0.7853
+Accuracy under FGSM after defense: 0.7823 (Improvement: 0.3650)
+Accuracy under PGD after defense: 0.7813 (Improvement: 0.5165)
+
+Performance Metrics:
+Standard training time: 289.79 seconds
+Adversarial training time: 460.06 seconds (58.76% increase)
+Average clean inference time: 0.0010 seconds per batch
+Average FGSM attack+inference time: 0.0362 seconds per batch
+Average PGD attack+inference time: 0.1489 seconds per batch

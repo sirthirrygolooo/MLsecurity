@@ -1,0 +1,35 @@
+[*] Using device: cuda
+[*] GPU Name: NVIDIA GeForce RTX 4060 Laptop GPU
+[*] Training initial model...
+[+] Epoch 1/10 - Loss: 1.1168
+[+] Epoch 2/10 - Loss: 0.5731
+[+] Epoch 3/10 - Loss: 0.3808
+[+] Epoch 4/10 - Loss: 0.3169
+[+] Epoch 5/10 - Loss: 0.3024
+[+] Epoch 6/10 - Loss: 0.2891
+[+] Epoch 7/10 - Loss: 0.2863
+[+] Epoch 8/10 - Loss: 0.2852
+[+] Epoch 9/10 - Loss: 0.3131
+[+] Epoch 10/10 - Loss: 0.2930
+
+[*] Initial accuracy: 0.7841
+
+=== Evasion Attacks ===
+[*] Accuracy after FGSM: 0.3351
+[*] Accuracy after PGD: 0.1750
+
+=== Adversarial Training ===
+Precompute adv samples: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00, 1821.23it/s]
+Adversarial training epochs: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 15/15 [06:50<00:00, 27.35s/it]
+
+[*] Accuracy after adversarial training: 0.7806
+[*] Accuracy after FGSM (after defense): 0.7831
+[*] Accuracy after PGD (after defense): 0.7804
+
+=== Summary ===
+Initial accuracy: 0.7841
+Accuracy after FGSM attack: 0.3351
+Accuracy after PGD attack: 0.1750
+Accuracy after adversarial training: 0.7806
+Accuracy against FGSM after defense: 0.7831
+Accuracy against PGD after defense: 0.7804

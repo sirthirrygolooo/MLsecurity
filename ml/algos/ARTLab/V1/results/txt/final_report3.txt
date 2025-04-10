@@ -1,0 +1,13 @@
+=== Adversarial Robustness Experiment Report ===
+
+Key Findings:
+- The model's accuracy drops from 78.31% to 42.40% under FGSM attack (45.86% reduction)
+- Under more sophisticated PGD attack, accuracy drops further to 25.22%
+- Adversarial training improves robustness, reducing FGSM effectiveness by 84.52%
+- The trade-off is a 52.61% increase in training time
+
+Recommendations:
+1. Implement adversarial training for critical applications
+2. Monitor inference times for potential attack detection
+3. Combine adversarial training with other defenses like input sanitization
+4. Consider model distillation to reduce computational overhead
