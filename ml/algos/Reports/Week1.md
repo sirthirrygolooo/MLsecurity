@@ -54,11 +54,12 @@
     <h3>Wednesday</h3>
     <ul>
         <li>Amélioration du lab pour implémenter les premiers cas d'attaques avec ART</li>
-        <li>Focus sur les attaques adversaires par inversion</li>
+        <li>Focus sur les attaques adversaires par inversion : FGSM et PGD</li>
     </ul>
     <h3>Thursday</h3>
     <ul>
-        <li>[Detailed description of activities completed]</li>
+        <li>Implémention des attaques FGSM et PGD, analyse des résultats</li>
+        <li>Recherches sur les moyens de défense contre ces attaques</li>
     </ul>
     <h3>Friday</h3>
     <ul>
@@ -96,8 +97,8 @@
 <div class="section">
     <h2>Difficulties Encountered</h2>
     <ul>
-        <li><strong>Problem 1:</strong> [Description of the problem and proposed solutions]</li>
-        <li><strong>Problem 2:</strong> [Description of the problem and proposed solutions]</li>
+        <li><strong>Problem 1:</strong> Pour les premiers tests, dataset trop pauvre.</li>
+        <li><strong>Problem 2:</strong> Beaucoup de problèmes de compatbilité entre les libs python</li>
     </ul>
 </div>
 
@@ -111,12 +112,12 @@
 
 <div class="section">
     <h2>Notes / Improvments</h2>
-    <p>[Remarks or suggestions to improve the internship]</p>
+    <p>RAS</p>
 </div>
 
 <div class="section">
     <h2>Signature</h2>
-    <p>FROEHLY Jean-Baptiste le Vendredi [Date]</p>
+    <p>FROEHLY Jean-Baptiste le Vendredi 11/04</p>
 </div>
 
 </body>
