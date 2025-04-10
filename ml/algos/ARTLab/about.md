@@ -39,3 +39,16 @@ This dataset is derived from the Alzheimer's Disease Neuroimaging Initiative (AD
 
 Citation
 When utilizing this dataset in your research or projects, please acknowledge the ADNI database as the original source and cite this Kaggle dataset.
+
+## Attacks 
+
+### Fast Gradient Sign Attack Implementation
+Adding small perturbations to an image can cause a big change in model performance. To test security vulnerabilities of ML models an important tool is adversarial machine learning. The Fast Gradient Sign Attack (FGSM) is a type of adversarial attack.
+It's a white box attack (i.e. the attacker knows the model, the parameters and the architecture).
+It is designed to attack neural networks using gradients. The attack uses the gradient of the loss w.r.t the input data, then adjusts (perturb) the input data to maximize the loss.
+
+### Projected Gradient Descent Attack Implementation
+PGD is a variant of FGSM applied iteratively with projection. It is a commonly used attack for adversarial training: training the network to be robust.
+
+https://owasp.org/www-project-machine-learning-security-top-10/
+https://ieeexplore.ieee.org/document/9064510
