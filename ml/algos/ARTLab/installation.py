@@ -11,7 +11,7 @@ except ImportError:
     except:
         print('Erreur d\'installation des dépendances')
 
-# Vérifier et créer le dossier 'img' s'il n'existe pas
+# dossier img
 img_dir = 'img'
 if not os.path.exists(img_dir):
     os.makedirs(img_dir)
