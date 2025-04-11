@@ -10,6 +10,8 @@ Dataset : [ADNI alzheimer detection](https://www.kaggle.com/datasets/proutkarsht
 
 LAB en cours : [ici](./ml/algos/ARTLab)
 
+Implémentation d'attaques **Fast Gradient Sign Method (FGSM)** et **Projected Gradient Descend (PGD)**
+
 Caracérisation des images :
 - 0: CN (Cognitively Normal)
 - 1: MCI (Mild Cognitive Impairment)
@@ -21,10 +23,16 @@ Premiers résultats :
 
 Images après modif. par FGSM et PGD :  
 
+**Exemple de FGSM sur images MNIST (ε=0.2)**  
+![fgsm_attack.png](ml/algos/ARTLab/V1/img/fgsm_attack.png)
+
 **FGSM (ε=0.2)**  
 ![fgsm_attack_full.png](ml/algos/ARTLab/V1/results/img/4V2/fgsm_attack_full.png)
 
-**PGD (ε=0.2), 10 ité.**  
+**Exemple de PGD sur images MNIST (ε=0.2) 10 ité.**  
+![pgd_attack.png](ml/algos/ARTLab/V1/img/pgd_attack.png)
+
+**PGD (ε=0.2) 10 ité.**  
 ![pgd_attack_full.png](ml/algos/ARTLab/V1/results/img/4V2/pgd_attack_full.png)
 
 **Matrices de confusion - Clean puis post-attaques**  
