@@ -10,14 +10,21 @@ Dataset : [ADNI alzheimer detection](https://www.kaggle.com/datasets/proutkarsht
 
 LAB en cours : [ici](./ml/algos/ARTLab)
 
+Caracérisation des images :
+- 0: CN (Cognitively Normal)
+- 1: MCI (Mild Cognitive Impairment)
+- 2: EMCI (Early Mild Cognitive Impairment)
+- 3: LMCI (Late Mild Cognitive Impairment)
+- 4: AD (Alzheimer's Disease)
+
 Premiers résultats :
 
 Images après modif. par FGSM et PGD :  
 
-**FGSM**  
+**FGSM (ε=0.2)**  
 ![fgsm_attack_full.png](ml/algos/ARTLab/V1/results/img/4V2/fgsm_attack_full.png)
 
-**PGD**  
+**PGD (ε=0.2), 10 ité.**  
 ![pgd_attack_full.png](ml/algos/ARTLab/V1/results/img/4V2/pgd_attack_full.png)
 
 **Matrices de confusion - Clean puis post-attaques**  
