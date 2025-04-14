@@ -258,11 +258,11 @@ def test_evasion_attack(attack, name, test_loader, device):
     return accuracy, cm, avg_time
 
 print("\n=== Evasion Attacks ===")
-fgsm = FastGradientMethod(art_classifier, eps=0.2)
-pgd = ProjectedGradientDescent(art_classifier, eps=0.2, max_iter=10)
+fgsm = FastGradientMethod(art_classifier, eps=0.7)
+pgd = ProjectedGradientDescent(art_classifier, eps=0.7, max_iter=10)
 
-(fgsm_acc, fgsm_cm, fgsm_time), fgsm_eval_time = test_evasion_attack(fgsm, "FGSM (ε=0.2)", test_loader, device)
-(pgd_acc, pgd_cm, pgd_time), pgd_eval_time = test_evasion_attack(pgd, "PGD (ε=0.2, iter=10)", test_loader, device)
+(fgsm_acc, fgsm_cm, fgsm_time), fgsm_eval_time = test_evasion_attack(fgsm, "FGSM (ε=0.7)", test_loader, device)
+(pgd_acc, pgd_cm, pgd_time), pgd_eval_time = test_evasion_attack(pgd, "PGD (ε=0.7, iter=10)", test_loader, device)
 
 # visu des atk
 plt.figure(figsize=(15, 5))
@@ -313,6 +313,95 @@ trainer, adv_train_time = adversarial_training(
     train_dataset,
     attacks=[fgsm, pgd]
 )
+
+
+@timeit
+def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5):
+    model.eval()
+    os.makedirs("img/attacks", exist_ok=True)
+
+    inputs, labels = next(iter(test_loader))
+    inputs, labels = inputs.to(device), labels.to(device)
+
+    fgsm = FastGradientMethod(art_classifier, eps=0.7)
+    pgd = ProjectedGradientDescent(art_classifier, eps=0.7, max_iter=10)
+
+    x_adv_fgsm = torch.FloatTensor(fgsm.generate(inputs.cpu().numpy())).to(device)
+    x_adv_pgd = torch.FloatTensor(pgd.generate(inputs.cpu().numpy())).to(device)
+
+    indices = np.random.choice(len(inputs), num_examples, replace=False)
+
+    plt.figure(figsize=(15, 5 * num_examples))
+
+    for i, idx in enumerate(indices):
+        original_img = inputs[idx].cpu().squeeze().numpy()
+        fgsm_img = x_adv_fgsm[idx].cpu().squeeze().numpy()
+        pgd_img = x_adv_pgd[idx].cpu().squeeze().numpy()
+        fgsm_diff = np.abs(original_img - fgsm_img)
+        pgd_diff = np.abs(original_img - pgd_img)
+
+        plt.subplot(num_examples, 5, i * 5 + 1)
+        plt.imshow(original_img, cmap='gray')
+        plt.title(f"Original (Label: {labels[idx].item()})")
+        plt.axis('off')
+
+        plt.subplot(num_examples, 5, i * 5 + 2)
+        plt.imshow(fgsm_img, cmap='gray')
+        plt.title("FGSM Perturbed")
+        plt.axis('off')
+
+        plt.subplot(num_examples, 5, i * 5 + 3)
+        plt.imshow(fgsm_diff, cmap='hot')
+        plt.title("FGSM Difference")
+        plt.axis('off')
+
+        plt.subplot(num_examples, 5, i * 5 + 4)
+        plt.imshow(pgd_img, cmap='gray')
+        plt.title("PGD Perturbed")
+        plt.axis('off')
+
+        plt.subplot(num_examples, 5, i * 5 + 5)
+        plt.imshow(pgd_diff, cmap='hot')
+        plt.title("PGD Difference")
+        plt.axis('off')
+
+    plt.tight_layout()
+    plt.savefig('img/attacks/attack_visualization.png')
+    plt.close()
+
+    for i, idx in enumerate(indices):
+        fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+
+        original_img = inputs[idx].cpu().squeeze().numpy()
+        fgsm_img = x_adv_fgsm[idx].cpu().squeeze().numpy()
+        pgd_img = x_adv_pgd[idx].cpu().squeeze().numpy()
+
+        fgsm_diff = np.abs(original_img - fgsm_img)
+        pgd_diff = np.abs(original_img - pgd_img)
+
+        axs[0].imshow(original_img, cmap='gray')
+        axs[0].set_title(f"Original (Label: {labels[idx].item()})")
+        axs[0].axis('off')
+
+        axs[1].imshow(fgsm_img, cmap='gray')
+        axs[1].set_title("FGSM Perturbed")
+        axs[1].axis('off')
+
+        axs[2].imshow(fgsm_diff, cmap='hot')
+        axs[2].set_title("FGSM Difference")
+        axs[2].axis('off')
+
+        axs[3].imshow(pgd_img, cmap='gray')
+        axs[3].set_title("PGD Perturbed")
+        axs[3].axis('off')
+
+        axs[4].imshow(pgd_diff, cmap='hot')
+        axs[4].set_title("PGD Difference")
+        axs[4].axis('off')
+
+        plt.tight_layout()
+        plt.savefig(f'img/attacks/attack_example_{i}.png')
+        plt.close()
 
 # eval post-défense
 (final_acc, final_cm, final_time), final_eval_time = evaluate_model(model, test_loader, device, "after defense")
@@ -428,3 +517,6 @@ with open('results/txt/final_report.txt', 'w') as f:
     f.write(f"- Under more sophisticated PGD attack, accuracy drops further to {pgd_acc:.2%}\n")
     f.write(f"- Adversarial training improves robustness, reducing FGSM effectiveness by {((fgsm_acc_def - fgsm_acc) / fgsm_acc):.2%}\n")
     f.write(f"- The trade-off is a {((adv_train_time / train_time - 1) * 100):.2f}% increase in training time\n\n")
+
+print("\n[*] Generating attack visualizations...")
+visualize_attacks(model, test_loader, device, art_classifier)
