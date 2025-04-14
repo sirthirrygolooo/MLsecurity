@@ -1,0 +1,59 @@
+[*] Using device: cuda
+[*] GPU Name: NVIDIA GeForce RTX 4060 Laptop GPU
+
+[*] Preparing data...
+
+[*] Training model...
+Epoch 1/10 - Loss: 1.0973
+Epoch 2/10 - Loss: 0.5689
+Epoch 3/10 - Loss: 0.3738
+Epoch 4/10 - Loss: 0.3140
+Epoch 5/10 - Loss: 0.2916
+Epoch 6/10 - Loss: 0.3023
+Epoch 7/10 - Loss: 0.3065
+Epoch 8/10 - Loss: 0.2834
+Epoch 9/10 - Loss: 0.2825
+Epoch 10/10 - Loss: 0.2819
+[TIME] train_model executed in 224.35 seconds
+
+=== Model Inversion Attack ===
+
+[*] Running Model Inversion for class 0
+Model inversion: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 19.08it/s]
+[TIME] run_model_inversion executed in 0.06 seconds
+
+[*] Running Model Inversion for class 2
+Model inversion: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:25<00:00, 25.60s/it]
+[TIME] run_model_inversion executed in 25.61 seconds
+
+[*] Running Model Inversion for class 4
+Model inversion: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 166.66it/s]
+[TIME] run_model_inversion executed in 0.01 seconds
+
+[*] Running Membership Inference Attack
+Attack Accuracy on Training Data: 99.78%
+Attack Accuracy on Test Data: 97.70%
+[TIME] run_membership_inference executed in 104.10 seconds
+
+=== Applying Defenses ===
+[*] Label Smoothing + Gradient Clipping
+[TIME] apply_defenses executed in 0.02 seconds
+
+[*] Re-running attacks with defenses...
+
+[*] Running Model Inversion for class 0
+Model inversion: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 248.63it/s]
+[TIME] run_model_inversion executed in 0.00 seconds
+
+[*] Running Model Inversion for class 2
+Model inversion: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:22<00:00, 22.72s/it]
+[TIME] run_model_inversion executed in 22.72 seconds
+
+[*] Running Model Inversion for class 4
+Model inversion: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 303.01it/s]
+[TIME] run_model_inversion executed in 0.00 seconds
+
+=== Final Report ===
+Original MSE Scores: {'Class_0': 1.7206893, 'Class_2': 1.4195591, 'Class_4': 1.5497224}
+Defended MSE Scores: {'Class_0': 1.7234329, 'Class_2': 1.4240397, 'Class_4': 1.5862725}
+Membership Inference - Train Acc: 99.78%, Test Acc: 97.70%

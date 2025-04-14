@@ -19,6 +19,7 @@ if not os.path.exists(img_dir):
 else:
     print(f"[*] Le dossier '{img_dir}' existe déjà.")
 
+# Download and move adni_dataset
 if not os.path.exists('adni_dataset'):
     try:
         print("[+] Downloading adni_dataset...")
@@ -34,6 +35,23 @@ if not os.path.exists('adni_dataset'):
         print(f"[!] Erreur lors du téléchargement ou du déplacement du dataset : {e}")
 else:
     print("[*] Le dataset existe déjà dans le répertoire de travail.")
+
+# Download and move lfw_dataset
+if not os.path.exists('lfw_dataset'):
+    try:
+        print("[+] Downloading lfw_dataset...")
+        path = kagglehub.dataset_download("your_dataset_owner/lfw_dataset")
+
+        new_path = os.path.join(os.path.dirname(path), 'lfw_dataset')
+        os.rename(path, new_path)
+
+        shutil.move(new_path, os.getcwd())
+
+        print("[*] Dataset téléchargé et déplacé avec succès.")
+    except Exception as e:
+        print(f"[!] Erreur lors du téléchargement ou du déplacement du dataset : {e}")
+else:
+    print("[*] Le dataset lfw_dataset existe déjà dans le répertoire de travail.")
 
 csv_path = os.path.join('adni_dataset', 'train.csv')
 

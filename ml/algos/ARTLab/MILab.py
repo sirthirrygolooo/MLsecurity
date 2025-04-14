@@ -15,7 +15,7 @@ from art.attacks.inference.model_inversion import MIFace
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 import seaborn as sns
 
-output_dir = "results/inversion"
+output_dir = "results/inversion1"
 os.makedirs(output_dir, exist_ok=True)
 
 def leTailleMeure(method):
@@ -34,7 +34,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"[*] Using device: {device}")
 print(f"[*] GPU Name: {torch.cuda.get_device_name(device)}" if torch.cuda.is_available() else "[*] No GPU available, using CPU.")
 
-# Dataset personnalisé IRM ADNI
 class ADNI_Dataset(Dataset):
     def __init__(self, csv_file, root_dir, transform=None):
         self.annotations = pd.read_csv(csv_file)
@@ -63,10 +62,9 @@ transform = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,))
 ])
 
-# CNN Model
-class FaceRecognitionModel(nn.Module):
+class RecognitionModel(nn.Module):
     def __init__(self):
-        super(FaceRecognitionModel, self).__init__()
+        super(RecognitionModel, self).__init__()
         self.conv1 = nn.Conv2d(1, 16, 3, padding=1)
         self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
         self.pool = nn.MaxPool2d(2, 2)
@@ -113,12 +111,10 @@ train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-# Training
 print("\n[*] Training model...")
-model = FaceRecognitionModel().to(device)
+model = RecognitionModel().to(device)
 model, train_time = train_model(model, train_loader)
 
-# ART Classifier
 loss_fn = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -128,7 +124,7 @@ art_classifier = PyTorchClassifier(
     optimizer=optimizer,
     input_shape=(1, 64, 64),
     nb_classes=5,
-    clip_values=(0, 1)  # Corrected clip_values to (0, 1)
+    clip_values=(0, 1)
 )
 
 @leTailleMeure
@@ -197,7 +193,10 @@ def run_membership_inference(art_classifier, train_dataset, test_dataset):
     X_test = torch.stack([x for x, _ in test_dataset]).numpy()
     y_test = torch.tensor([y for _, y in test_dataset]).numpy()
 
-    attack = MembershipInferenceBlackBox(classifier=art_classifier)
+    attack = MembershipInferenceBlackBox(estimator=art_classifier)
+
+    attack.fit(X_train, y_train, X_test, y_test)
+
     train_preds = attack.infer(X_train, y_train)
     test_preds = attack.infer(X_test, y_test)
 
@@ -208,7 +207,7 @@ def run_membership_inference(art_classifier, train_dataset, test_dataset):
     print(f"Attack Accuracy on Test Data: {test_acc:.2%}")
     return train_acc, test_acc
 
-train_acc, test_acc = run_membership_inference(art_classifier, train_dataset, test_dataset)
+(train_acc, test_acc), _ = run_membership_inference(art_classifier, train_dataset, test_dataset)
 
 @leTailleMeure
 def apply_defenses(model):
@@ -222,7 +221,7 @@ def apply_defenses(model):
         group['max_grad_norm'] = 1.0
     return model, criterion, optimizer
 
-model_defended, criterion, optimizer = apply_defenses(model)
+(model_defended, criterion, optimizer), _ = apply_defenses(model)
 
 art_classifier_defended = PyTorchClassifier(
     model=model_defended,
@@ -230,7 +229,7 @@ art_classifier_defended = PyTorchClassifier(
     optimizer=optimizer,
     input_shape=(1, 64, 64),
     nb_classes=5,
-    clip_values=(0, 1)  # Corrected clip_values to (0, 1)
+    clip_values=(0, 1)
 )
 
 print("\n[*] Re-running attacks with defenses...")
@@ -241,8 +240,6 @@ for class_id in target_classes:
 
 visualize_inversion(original_samples, inverted_images_defended, class_names, suffix="_defended")
 mse_scores_defended = evaluate_inversion(original_samples, inverted_images_defended, class_names, suffix="_defended")
-
-# Rapport
 print("\n=== Final Report ===")
 print(f"Original MSE Scores: {dict(zip(class_names, mse_scores))}")
 print(f"Defended MSE Scores: {dict(zip(class_names, mse_scores_defended))}")
