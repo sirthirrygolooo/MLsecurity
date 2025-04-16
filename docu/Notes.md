@@ -112,9 +112,11 @@ Si cette attaque a un impact négatif important sur l'exactitude de la classific
 [Article 1 securite machine learning](https://aventisec.com/blog/securite-machine-learning)  
 [Article Microsoft](https://learn.microsoft.com/fr-fr/security/engineering/threat-modeling-aiml)  
 [PDF 1](https://arxiv.org/pdf/2112.02797)
-[PDF 2](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-2e2025.pdf)
-
+[PDF 2](https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-2e2025.pdf)  
+[DP](https://www.riskinsight-wavestone.com/2024/10/data-poisoning-une-menace-pour-lintegrite-et-la-securite-du-llm/)  
+[NN](https://ichi.pro/fr/deep-learning-avec-python-reseaux-de-neurones-tutoriel-complet-118007459244784)  
 # Datasets 
 
 https://www.kaggle.com/datasets/proutkarshtiwari/adni-images-for-alzheimer-detection  
-https://www.kaggle.com/datasets/sarahtaha/1025-pokemon
+https://www.kaggle.com/datasets/sarahtaha/1025-pokemon  
+

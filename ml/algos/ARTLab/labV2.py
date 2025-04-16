@@ -82,22 +82,35 @@ def prepare_data():
     return train_loader, test_loader, train_dataset, test_dataset
 
 (train_loader, test_loader, train_dataset, test_dataset), prep_time = prepare_data()
-
+    
+# Les neuronnnnns - CNN
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+        # niveau de gris donc 1 canal entree, 32 canaux sortie, filtre 3*3, padding 1px pour conserver les val
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        # 32 canaux entree, 64 canaux sortie, filtre 3*3, padding 1px pour conserver les val
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        # couche de pooling
         self.pool = nn.MaxPool2d(2, 2)
+        # première couche entierement conn. (64*32*32 = 65536 entrees, 512 sorties)
         self.fc1 = nn.Linear(64 * 32 * 32, 512)
+        # deuxième couche entierement conn. (512 entrees, 5 sorties) -> 5 diagnostics
         self.fc2 = nn.Linear(512, 5)
-        self.dropout = nn.Dropout(0.5)  # Added for better regularization
+        # couche de dropout pour eviter l'overfitting (0.5 = 50% des neurones sont mis à 0)
+        self.dropout = nn.Dropout(0.5)
 
+    # opération de propagation avant
     def forward(self, x):
+        # premiere couche de convolution + activation ReLU + pooling
         x = self.pool(torch.relu(self.conv1(x)))
+        # deuxieme couche de convolution + activation ReLU + pooling
         x = self.pool(torch.relu(self.conv2(x)))
+        # applatir en v. 1d pour appliquer la couche entierement conn.
         x = x.view(-1, 64 * 32 * 32)
+        # applique la premiere couche entierement conn. + activation ReLU + dropout
         x = self.dropout(torch.relu(self.fc1(x)))
+        # applique la deuxieme couche entierement conn. et return
         return self.fc2(x)
 
 model = Net().to(device)
@@ -403,7 +416,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
         plt.savefig(f'img/attacks/attack_example_{i}.png')
         plt.close()
 
-# eval post-défense
+
 (final_acc, final_cm, final_time), final_eval_time = evaluate_model(model, test_loader, device, "after defense")
 
 (fgsm_acc_def, fgsm_cm_def, fgsm_time_def), fgsm_eval_time_def = test_evasion_attack(
@@ -414,7 +427,6 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
     pgd, "PGD (after defense)", test_loader, device
 )
 
-# comparaison de l'efficacité
 defense_metrics = {
     'Before Defense': {
         'Clean': clean_acc,
@@ -430,7 +442,6 @@ defense_metrics = {
     }
 }
 
-# visualisation de l'efficacité des défenses
 plt.figure(figsize=(15, 5))
 
 plt.subplot(1, 3, 1)
@@ -472,7 +483,6 @@ plt.legend()
 plt.tight_layout()
 plt.savefig('img/defense_comparison.png')
 
-# sauvegarde des val. pour comparaison
 metrics_df = pd.DataFrame({
     'Scenario': ['Clean', 'FGSM Attack', 'PGD Attack',
                  'Clean (After Defense)', 'FGSM (After Defense)', 'PGD (After Defense)'],
@@ -484,7 +494,6 @@ metrics_df = pd.DataFrame({
 
 metrics_df.to_csv('results/metrics_comparison.csv', index=False)
 
-# comp. finale
 plt.figure(figsize=(8, 5))
 plt.bar(['Standard Training', 'Adversarial Training'],
         [train_time, adv_train_time],
