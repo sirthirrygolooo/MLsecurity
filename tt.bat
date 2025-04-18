@@ -1,0 +1,1 @@
+.venv\Scripts\activate && cd ./ml/algos/ARTLab && cls

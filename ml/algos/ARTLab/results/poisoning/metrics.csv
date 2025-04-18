@@ -1,0 +1,8 @@
+,Value
+clean_accuracy,0.7793682132280355
+poisoned_accuracy,0.7102665350444225
+robust_accuracy,0.5824284304047384
+backdoor_success_rate,0.27393879565646595
+robust_backdoor_rate,0.17818361303060218
+defense_efficacy,0.34954954954954953
+outlier_detection_rate,0.15612465288491206

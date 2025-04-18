@@ -1,0 +1,7 @@
+=== Model Inversion Attack Report ===
+
+Key Findings:
+- Successful reconstruction for all target classes (MSE: 1.0231)
+- Defenses reduced reconstruction quality by 0.04%
+- Membership inference accuracy: 97.81% (train), 55.76% (test)
+
