@@ -90,7 +90,7 @@
   </div>
   <div class="section">
     <div class="section-title">
-      <h2>Results Obtained</h2>
+      <h2>Summary</h2>
     </div>
     <div class="section-content">
       <p>As a new type of attack, I looked at data poisoning, which seemed to me to be the next logical step, given that we're now attacking training data.</p>
@@ -122,49 +122,22 @@
             <li>Introduced data often difficult to detect</li>
             <li>Allows you to target whether you want to disrupt the model in general or a particular behaviour.</li>
             <li>Difficult to detect</li>
-            <li></li>
+            <li>Very significant impact, especially in sensitive contexts</li>
           </ul>
         </li>
       </ul>
-      <p>Exemple:</p>
-      <div class="img-container">
-        <img src="https://www.tensorflow.org/tutorials/generative/images/adversarial_example.png" alt="FGSM_illustration">
-        <p>Illustration du principe FGSM (source TensorFlow.org) pour ε = .007</p>
-      </div>
-      <h3>Projected Gradient Descent (PGD)</h3>
-      <ul>
-        <li><strong>Principe:</strong> Version itérative plus puissante de FGSM</li>
-        <li><strong>Fonctionnement:</strong>
-          <ul>
-            <li>Applique <strong>FGSM</strong> en plusieurs petites étapes (10 itérations dans mes tests)</li>
-            <li>Après chaque étape, projette la perturbation dans un champ ε (pour limiter la magnitude et contrôler la perturbation)</li>
-            <li>Formule itérative: <code>x_adv(t+1) = Proj(x_adv(t) + α * sign(∇x J(θ, x_adv(t), y)))</code></li>
-          </ul>
-        </li>
-        <li><strong>Caractéristiques:</strong>
-          <ul>
-            <li>Plus sophistiquée que <strong>FGSM</strong></li>
-            <li>Perturbations générées plus subtiles</li>
-          </ul>
-        </li>
-      </ul>
-      <table>
-        <thead>
-          <tr>
-            <th>Experiment/Test</th>
-            <th>Results</th>
-            <th>Observations</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>[Name of experiment/test]</td>
-            <td>[Results obtained]</td>
-            <td>[Observations]</td>
-          </tr>
-        </tbody>
-      </table>
+    <p></p>
     </div>
+  </div>
+  <div class="section">
+    <div class="section-title">
+      <h2>Results</h2>
+    </div>
+    <div class="section-content">
+      <p>Example of implementation of backdoor attack on MNIST dataset</p>
+      <p>My trigger in this case is a small white square introduced on certain images in the bottom right-hand corner. The instruction is that if this white square is there, the image must be labelled 7.</p>
+    </div>
+    <div class="img-container"><img src="" alt=""></div>
   </div>
   <div class="section">
     <div class="section-title">
