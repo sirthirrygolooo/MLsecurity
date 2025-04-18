@@ -8,6 +8,7 @@
     body {
       font-family: Arial, sans-serif;
       margin: 20px;
+      font-size: 10px;
       line-height: 1.6;
       color: #333;
     }
@@ -49,6 +50,7 @@
       border: 1px solid #ccc;
       padding: 10px;
       background-color: #fafafa;
+      text-align: center;
     }
     .img-container img {
       max-width: 100%;
@@ -127,18 +129,57 @@
         </li>
       </ul>
     <p></p>
+    <h3>Defence</h3>
+    <p>I firstly tried an easy defence method, as my trigger pattern is easy to detect.</p>
+    <p>The method I'm going to try and implement is a common one when it comes to countering a backdoor: Trigger Mitigation</p>
+    <ul>
+    <p>The idead is to neutralize triggers after training through : </p>
+        <li>Deactivation of triggered sensitive neurons</li>
+        <li>Reverse Engineering of the trigger (easy in my case according to trigger choice)</li>
+    </ul>
     </div>
   </div>
   <div class="section">
     <div class="section-title">
       <h2>Results</h2>
     </div>
+    <h3>Attack Test</h3>
     <div class="section-content">
       <p>Example of implementation of backdoor attack on MNIST dataset</p>
       <p>My trigger in this case is a small white square introduced on certain images in the bottom right-hand corner. The instruction is that if this white square is there, the image must be labelled 7.</p>
     </div>
-    <div class="img-container"><img src="" alt=""></div>
-  </div>
+    <div class="img-container"><img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/examples.png" alt="normalMNIST">
+    <p>Fig.2 Normal behaviour</p>
+    </div>
+    <div class="img-container">
+    <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/prediction_comparison.png" alt="tirggeredMNIST">
+    <p>Fig.1 Behaviour when triggered (prediction written on the top)</p>
+    </div>
+    <div class="img-container">
+    <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/confusion_matrix_clean.png" alt="CM_clean">
+    <p>Fig.3 Confusion matrix on clean data</p>
+    </div>
+    <div class="img-container">
+    <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/confusion_matrix_poisoned.png" alt="CM_poisoned">
+    <p>Fig.4 Confusion matrix on poisoned data</p>
+    </div>
+    <p>Output</p>
+    <pre>
+    <code>
+Epoch 1 done, Loss: 0.2486, Accuracy: 92.08%
+Epoch 2 done, Loss: 0.0613, Accuracy: 98.07%
+Epoch 3 done, Loss: 0.0432, Accuracy: 98.70%
+Accuracy sur données propres : 98.60%
+Attaque backdoor (trigger → 7) : succès à 100.00%</code>
+    </pre>
+    </div>
+    <h3>Defence test</h3>
+    <div class="section-content">
+        <p>Implementation of randomization of triggered images and mitigation</p>
+        <div class="img-container">
+            <img src="" alt="">
+        </div>
+    </div>
   <div class="section">
     <div class="section-title">
       <h2>Analysis and Interpretation</h2>

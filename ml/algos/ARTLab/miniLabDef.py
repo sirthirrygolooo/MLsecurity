@@ -251,13 +251,8 @@ plt.tight_layout()
 plt.savefig(os.path.join(results_dir, 'prediction_comparison.png'))
 plt.close()
 
-# Reverse engineer the trigger pattern
 trigger_pattern = reverse_engineer_trigger(model, train_loader)
-
-# Mitigate the trigger pattern
 mitigate_trigger(model, train_loader, trigger_pattern)
-
-# Re-evaluate the model after mitigation
 labels, preds_clean, preds_poisoned = test_backdoor(model)
 
 plot_confusion_matrix(labels, preds_clean, "Matrice de confusion (données propres après mitigation)", os.path.join(results_dir, 'confusion_matrix_clean_mitigated.png'))
