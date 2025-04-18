@@ -88,63 +88,41 @@
       </ul>
     </div>
   </div>
-
-  <div class="section">
-    <div class="section-title">
-      <h2>Activities Completed</h2>
-    </div>
-    <div class="section-content">
-      <h3>Monday</h3>
-      <ul>
-        <li>Research on different types of attacks, their mechanisms, and implications</li>
-        <li>Analysis of each to see at which level of the ML chain they operate, their strengths and weaknesses</li>
-        <li>Initial Data Poisoning tests on a small dataset (~1200 rows): not very conclusive</li>
-      </ul>
-      <h3>Tuesday</h3>
-      <ul>
-        <li>More in-depth research with a particular focus on Adversarial attacks</li>
-        <li>Selection of more interesting datasets for my tests</li>
-        <li>Development of a first lab based on an MRI image dataset for Alzheimer's disease detection</li>
-      </ul>
-      <h3>Wednesday</h3>
-      <ul>
-        <li>Improvement of the lab to implement initial attack cases with ART</li>
-        <li>Focus on adversarial attacks by inversion</li>
-      </ul>
-      <h3>Thursday</h3>
-      <ul>
-        <li>Implementation of first adversarial attacks (NDNN and DNN), analysis of results</li>
-        <li>Analyse du fonctionnement des attaques FGSM et PGD</li>
-      </ul>
-      <h3>Friday</h3>
-      <ul>
-        <li>Elaboration du rapport</li>
-        <li>Defense mechanisms analysis on adversarial attacks through NDNN and DNN</li>
-      </ul>
-    </div>
-  </div>
   <div class="section">
     <div class="section-title">
       <h2>Results Obtained</h2>
     </div>
     <div class="section-content">
-      <p>Je me suis principalement concentré dans un premier temps sur les attaques <strong>Fast Gradient Sign Method</strong> et <strong>Projected Gradient Descent</strong></p>
-      <h3>Fast Gradient Sign Method (FGSM)</h3>
+      <p>As a new type of attack, I looked at data poisoning, which seemed to me to be the next logical step, given that we're now attacking training data.</p>
+      <h3>Data Poisoning</h3>
       <ul>
-        <li><strong>Principe:</strong> Attaque basée sur le gradient, simple mais efficace</li>
+        <li><strong>Principle:</strong> Modify the training dataset by introducing falsified or biased data.</li>
+        <li><strong>Goal : </strong>
+        <ul>
+            <li>Making the model less efficient</li>
+            <li>Make it produce specific errors (backdoor attacks)</li>
+            <li>Bias it in certain predictions</li>
+        </ul>
+        </li>
         <li><strong>Fonctionnement:</strong>
           <ul>
-            <li>Calcule le gradient de la fonction de perte par rapport à l'image d'entrée</li>
-            <li>Ajoute une petite perturbation dans la direction qui maximise l'erreur</li>
-            <li>Formule: <code>x_adv = x + ε * sign(∇x J(θ, x, y))</code></li>
-            <li>Intensité de la perturbation contrôlée par <code>ε</code> (<code>ε = 0.2</code> dans la plupart de mes tests)</li>
+            <li>Gathering information on the target model</li>
+            <li>Creation or modification of malicious data</li>
+            <li>Injection into the data pipeline</li>
+            <ul>
+                <li>Contaminated public database</li>
+                <li>User contributions (collaborative systems or federated learning)</li>
+                <li>Direct attack</li>
+            </ul>
+            <li>Training the model on this poisoned data</li>
           </ul>
         </li>
         <li><strong>Caractéristiques:</strong>
           <ul>
-            <li>Attaque en une seule étape (one-shot)</li>
-            <li>Perturbations souvent visibles à l'œil nu</li>
-            <li>Rapide à calculer</li>
+            <li>Introduced data often difficult to detect</li>
+            <li>Allows you to target whether you want to disrupt the model in general or a particular behaviour.</li>
+            <li>Difficult to detect</li>
+            <li></li>
           </ul>
         </li>
       </ul>

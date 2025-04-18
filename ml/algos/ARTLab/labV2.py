@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import torch.nn.functional as F
 from torchvision import transforms
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
@@ -61,7 +62,7 @@ class BrainMRIDataset(Dataset):
 
 # Data preparation
 transform = transforms.Compose([
-    transforms.Resize((128, 128)),
+    transforms.Resize((160, 256)),
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
@@ -113,7 +114,61 @@ class Net(nn.Module):
         # applique la deuxieme couche entierement conn. et return
         return self.fc2(x)
 
-model = Net().to(device)
+class Netv2(nn.Module):
+    def __init__(self):
+        super(Netv2, self).__init__()
+        self.conv_block1 = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # output: 32 x 80 x 128
+        )
+
+        self.conv_block2 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # output: 64 x 40 x 64
+        )
+
+        self.conv_block3 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(2),  # output: 128 x 20 x 32
+        )
+
+        # Réduction adaptative pour s'affranchir de la taille d'entrée
+        self.avgpool = nn.AdaptiveAvgPool2d((4, 4))  # output: 128 x 4 x 4
+        self.flatten_dim = 128 * 4 * 4
+
+        self.classifier = nn.Sequential(
+            nn.Linear(self.flatten_dim, 512),
+            nn.ReLU(inplace=True),
+            nn.Dropout(0.5),
+            nn.Linear(512, 5)
+        )
+
+    def forward(self, x):
+        x = self.conv_block1(x)
+        x = self.conv_block2(x)
+        x = self.conv_block3(x)
+        x = self.avgpool(x)
+        x = x.view(-1, self.flatten_dim)
+        x = self.classifier(x)
+        return x
+
+
+model = Netv2().to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
 
@@ -226,7 +281,7 @@ art_classifier = PyTorchClassifier(
     model=model,
     loss=criterion,
     optimizer=optimizer,
-    input_shape=(1, 128, 128),
+    input_shape=(1, 160, 256),
     nb_classes=5,
     clip_values=(0, 1)
 )
@@ -271,11 +326,11 @@ def test_evasion_attack(attack, name, test_loader, device):
     return accuracy, cm, avg_time
 
 print("\n=== Evasion Attacks ===")
-fgsm = FastGradientMethod(art_classifier, eps=0.7)
-pgd = ProjectedGradientDescent(art_classifier, eps=0.7, max_iter=10)
+fgsm = FastGradientMethod(art_classifier, eps=0.4)
+pgd = ProjectedGradientDescent(art_classifier, eps=0.4, max_iter=10)
 
-(fgsm_acc, fgsm_cm, fgsm_time), fgsm_eval_time = test_evasion_attack(fgsm, "FGSM (ε=0.7)", test_loader, device)
-(pgd_acc, pgd_cm, pgd_time), pgd_eval_time = test_evasion_attack(pgd, "PGD (ε=0.7, iter=10)", test_loader, device)
+(fgsm_acc, fgsm_cm, fgsm_time), fgsm_eval_time = test_evasion_attack(fgsm, "FGSM (ε=0.4)", test_loader, device)
+(pgd_acc, pgd_cm, pgd_time), pgd_eval_time = test_evasion_attack(pgd, "PGD (ε=0.4, iter=10)", test_loader, device)
 
 # visu des atk
 plt.figure(figsize=(15, 5))
@@ -330,14 +385,15 @@ trainer, adv_train_time = adversarial_training(
 
 @timeit
 def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5):
+    EPSILON = 0.4
     model.eval()
     os.makedirs("img/attacks", exist_ok=True)
 
     inputs, labels = next(iter(test_loader))
     inputs, labels = inputs.to(device), labels.to(device)
 
-    fgsm = FastGradientMethod(art_classifier, eps=0.7)
-    pgd = ProjectedGradientDescent(art_classifier, eps=0.7, max_iter=10)
+    fgsm = FastGradientMethod(art_classifier, eps=EPSILON)
+    pgd = ProjectedGradientDescent(art_classifier, eps=EPSILON, max_iter=10)
 
     x_adv_fgsm = torch.FloatTensor(fgsm.generate(inputs.cpu().numpy())).to(device)
     x_adv_pgd = torch.FloatTensor(pgd.generate(inputs.cpu().numpy())).to(device)
@@ -360,7 +416,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
 
         plt.subplot(num_examples, 5, i * 5 + 2)
         plt.imshow(fgsm_img, cmap='gray')
-        plt.title("FGSM Perturbed")
+        plt.title("FGSM Perturbed ε="+str(EPSILON))
         plt.axis('off')
 
         plt.subplot(num_examples, 5, i * 5 + 3)
@@ -370,7 +426,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
 
         plt.subplot(num_examples, 5, i * 5 + 4)
         plt.imshow(pgd_img, cmap='gray')
-        plt.title("PGD Perturbed")
+        plt.title("PGD Perturbed ε="+str(EPSILON))
         plt.axis('off')
 
         plt.subplot(num_examples, 5, i * 5 + 5)
@@ -397,7 +453,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
         axs[0].axis('off')
 
         axs[1].imshow(fgsm_img, cmap='gray')
-        axs[1].set_title("FGSM Perturbed")
+        axs[1].set_title("FGSM Perturbed ε="+str(EPSILON))
         axs[1].axis('off')
 
         axs[2].imshow(fgsm_diff, cmap='hot')
@@ -405,7 +461,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
         axs[2].axis('off')
 
         axs[3].imshow(pgd_img, cmap='gray')
-        axs[3].set_title("PGD Perturbed")
+        axs[3].set_title("PGD Perturbed ε="+str(EPSILON))
         axs[3].axis('off')
 
         axs[4].imshow(pgd_diff, cmap='hot')

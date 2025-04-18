@@ -1,8 +1,8 @@
 === Adversarial Robustness Experiment Report ===
 
 Key Findings:
-- The model's accuracy drops from 78.55% to 9.53% under FGSM attack (87.87% reduction)
-- Under more sophisticated PGD attack, accuracy drops further to 1.55%
-- Adversarial training improves robustness, reducing FGSM effectiveness by 565.28%
-- The trade-off is a 9.24% increase in training time
+- The model's accuracy drops from 72.56% to 17.72% under FGSM attack (75.58% reduction)
+- Under more sophisticated PGD attack, accuracy drops further to 2.62%
+- Adversarial training improves robustness, reducing FGSM effectiveness by 213.09%
+- The trade-off is a 338.79% increase in training time
 
