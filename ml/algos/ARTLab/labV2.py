@@ -16,7 +16,7 @@ from art.estimators.classification import PyTorchClassifier
 from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent
 from art.defences.trainer import AdversarialTrainer
 
-# Decorator pour mes analyses de temps
+# Decorator pour les analyses de temps
 def timeit(method):
     def timed(*args, **kw):
         ts = time.time()
