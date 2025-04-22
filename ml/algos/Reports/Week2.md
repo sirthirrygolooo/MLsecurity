@@ -149,11 +149,7 @@
       <p>My trigger in this case is a small white square introduced on certain images in the bottom right-hand corner. The instruction is that if this white square is there, the image must be labelled 7.</p>
     </div>
     <div class="img-container"><img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/examples.png" alt="normalMNIST">
-    <p>Fig.2 Normal behaviour</p>
-    </div>
-    <div class="img-container">
-    <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/prediction_comparison.png" alt="tirggeredMNIST">
-    <p>Fig.1 Behaviour when triggered (prediction written on the top)</p>
+    <p>Fig.2 Normal behaviour and trigger activation (Label: 7 on 1)</p>
     </div>
     <div class="img-container">
     <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results/minilab/confusion_matrix_clean.png" alt="CM_clean">
@@ -176,27 +172,38 @@ Attaque backdoor (trigger → 7) : succès à 100.00%</code>
     <h3>Defence test</h3>
     <div class="section-content">
         <p>Implementation of randomization of triggered images and mitigation</p>
-        <div class="img-container">
-            <img src="" alt="">
-        </div>
+        <p>Output</p>
+        <pre>
+            <code>
+Epoch 1, Loss: 0.2167, Accuracy: 93.28%
+Epoch 2, Loss: 0.0556, Accuracy: 98.36%
+Epoch 3, Loss: 0.0392, Accuracy: 98.75%
+Accuracy (clean): 98.60%
+Backdoor success rate: 100.00%
+F1 Score (clean): 0.9856194746919421
+Reverse Engineering Epoch 1, Loss: 0.0334
+Reverse Engineering Epoch 2, Loss: 0.0320
+Reverse Engineering Epoch 3, Loss: 0.0325
+Reverse Engineering Epoch 4, Loss: 0.0324
+Reverse Engineering Epoch 5, Loss: 0.0322
+Mitigation Epoch 1, Loss: 0.0320
+Mitigation Epoch 2, Loss: 0.0237
+Mitigation Epoch 3, Loss: 0.0195
+Mitigation Epoch 4, Loss: 0.0139
+Mitigation Epoch 5, Loss: 0.0122
+Accuracy (clean): 98.60%
+Backdoor success rate: 100.00%
+F1 Score (clean): 0.985583773466565</code>
+        </pre>
     </div>
   <div class="section">
     <div class="section-title">
       <h2>Analysis and Interpretation</h2>
     </div>
     <div class="section-content">
-      <p>[Detailed analysis of results, scientific interpretation, and implications]</p>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">
-      <h2>Difficulties Encountered</h2>
-    </div>
-    <div class="section-content">
-      <ul>
-        <li><strong>Problem 1:</strong> For the initial tests, the dataset was too limited.</li>
-        <li><strong>Problem 2:</strong> Many compatibility issues between Python libraries</li>
-      </ul>
+        <p>As we can see, the model still very performant and its effectiveness is not affected by the backdoor or poisoned data. However, systematically activating a backdoor leads to data being misclassified.</p>
+        <p>As far as the defence is concerned, the pattern seems to have been detected quite well, but the application of mitigation doesn't work in this case and doesn't prevent the trigger from being activated.</p>
+        <p>It's probably a problem of code that I need to resolve because the technique is usually effective</p>
     </div>
   </div>
   <div class="section">
@@ -205,23 +212,14 @@ Attaque backdoor (trigger → 7) : succès à 100.00%</code>
     </div>
     <div class="section-content">
       <ul>
-        <li><strong>Objective 1:</strong> [Description of the objective for the following week]</li>
-        <li><strong>Objective 2:</strong> [Description of the objective for the following week]</li>
+        <li><strong>Objective 1:</strong>Repair mitigation to provide an effective defence against backdoors with easy-to-detect patterns</li>
+        <li><strong>Objective 2:</strong>Improve the general CNN on my tests to see the robustness of the different types against different attack vectors</li>
       </ul>
     </div>
   </div>
   <div class="section">
-    <div class="section-title">
-      <h2>Notes / Improvements</h2>
-    </div>
-    <div class="section-content">
-      <p>None</p>
-    </div>
-  </div>
-  <div class="section">
     <div class="signature">
-      <h2>Signature</h2>
-      <p>FROEHLY Jean-Baptiste, Friday 11/04/2025</p>
+      <p>FROEHLY Jean-Baptiste, Friday 18/04/2025</p>
     </div>
   </div>
 </body>
