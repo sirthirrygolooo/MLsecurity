@@ -8,7 +8,7 @@ kagglehub
 seaborn
 adversarial-robustness-toolbox==1.14.0
 
-# Install PyTorch with CUDA 12.1 support
+# PyTorch CUDA 12.1 support
 torch==2.1.0+cu126
 torchvision==0.16.0+cu126
 torchaudio==2.1.0+cu126

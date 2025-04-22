@@ -19,7 +19,7 @@ if not os.path.exists(img_dir):
 else:
     print(f"[*] Le dossier '{img_dir}' existe déjà.")
 
-# Download and move adni_dataset
+# adni dataset
 if not os.path.exists('adni_dataset'):
     try:
         print("[+] Downloading adni_dataset...")
@@ -36,7 +36,7 @@ if not os.path.exists('adni_dataset'):
 else:
     print("[*] Le dataset existe déjà dans le répertoire de travail.")
 
-# Download and move lfw_dataset
+# lfw_dataset
 if not os.path.exists('lfw_dataset'):
     try:
         print("[+] Downloading lfw_dataset...")
