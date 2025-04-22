@@ -6,6 +6,7 @@ pandas
 Pillow
 kagglehub
 seaborn
+plotly
 adversarial-robustness-toolbox==1.14.0
 
 # PyTorch CUDA 12.1 support

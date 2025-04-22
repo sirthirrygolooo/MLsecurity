@@ -1,396 +1,177 @@
 import time
-import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms
-from torch.utils.data import DataLoader, Dataset, random_split
-from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
-from art.estimators.classification import PyTorchClassifier
-from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent, CarliniL2Method
-from art.defences.trainer import AdversarialTrainer
-from art.defences.preprocessor import FeatureSqueezing, SpatialSmoothing
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+# Decorator pour mes analyses de temps
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        print(f"[TIME] {method.__name__} executed in {(te - ts):.2f} seconds")
+        return result, te - ts
+    return timed
 
-class AdvancedAdversarialLab:
-    def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.setup_environment()
-        self.prepare_data()
-        self.setup_model()
-        self.attack_params = {
-            'fgsm': {'eps': 0.2},
-            'pgd': {'eps': 0.2, 'max_iter': 10},
-            'carlini': {'confidence': 0.5, 'max_iter': 100}
-        }
-        self.setup_output_dirs()
+torch.manual_seed(42)
+np.random.seed(42)
 
-    def setup_environment(self):
-        torch.manual_seed(42)
-        np.random.seed(42)
-        print(f"[*] Using device: {self.device}")
-        if torch.cuda.is_available():
-            print(f"[*] GPU: {torch.cuda.get_device_name(self.device)}")
-            print(f"[*] CUDA: {torch.version.cuda}")
-            print(f"[*] Memory: {torch.cuda.get_device_properties(self.device).total_memory / 1024 ** 3:.2f} GB")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"[*] Using device: {device}")
 
-    def setup_output_dirs(self):
-        os.makedirs("img", exist_ok=True)
-        os.makedirs("results", exist_ok=True)
-        os.makedirs("models", exist_ok=True)
+# Verif gpu parce que mskn sur le processeur ça prend 20 ans
+if torch.cuda.is_available():
+    print(f"[*] GPU Name: {torch.cuda.get_device_name(device)}")
+    print(f"[*] CUDA Version: {torch.version.cuda}")
+    print(f"[*] GPU Memory: {torch.cuda.get_device_properties(device).total_memory / 1024 ** 3:.2f} GB")
 
-    def prepare_data(self):
-        transform = transforms.Compose([
-            transforms.Resize((128, 128)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,))
-        ])
+# Classe pour adapter au dataset
+class EmailDataset(Dataset):
+    def __init__(self, csv_file):
+        self.data = pd.read_csv(csv_file)
 
-        dataset = BrainMRIDataset(
-            csv_file='adni_dataset/train.csv',
-            root_dir='adni_dataset/ADNI_IMAGES/png_images',
-            transform=transform
-        )
+    def __len__(self):
+        return len(self.data)
 
-        train_size = int(0.7 * len(dataset))
-        val_size = int(0.15 * len(dataset))
-        test_size = len(dataset) - train_size - val_size
+    def __getitem__(self, index):
+        features = self.data.iloc[index, :-1].values.astype(np.float32)
+        label = self.data.iloc[index, -1]
+        return torch.tensor(features), torch.tensor(label, dtype=torch.long)
 
-        self.train_dataset, self.val_dataset, self.test_dataset = random_split(
-            dataset, [train_size, val_size, test_size]
-        )
+# Data preparation
+@timeit
+def prepare_data():
+    dataset = EmailDataset(csv_file='email_dataset.csv')
 
-        self.train_loader = DataLoader(self.train_dataset, batch_size=32, shuffle=True)
-        self.val_loader = DataLoader(self.val_dataset, batch_size=32, shuffle=False)
-        self.test_loader = DataLoader(self.test_dataset, batch_size=32, shuffle=False)
+    train_size = int(0.8 * len(dataset))
+    test_size = len(dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
 
-    def setup_model(self):
-        self.model = EnhancedNet().to(self.device)
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        self.scheduler = ReduceLROnPlateau(self.optimizer, 'min', patience=3, factor=0.5)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
-    def train(self, epochs=15, adversarial=False):
-        best_val_loss = float('inf')
-        train_losses = []
-        val_losses = []
+    return train_loader, test_loader, train_dataset, test_dataset
 
-        for epoch in range(epochs):
-            self.model.train()
-            epoch_train_loss = 0
+(train_loader, test_loader, train_dataset, test_dataset), prep_time = prepare_data()
 
-            for inputs, labels in self.train_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
+# Les neuronnnnns - MLP
+class Net(nn.Module):
+    def __init__(self, input_dim):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(input_dim, 128)
+        self.fc2 = nn.Linear(128, 64)
+        self.fc3 = nn.Linear(64, 2)  # 2 classes: Safe or Phishing
+        self.dropout = nn.Dropout(0.5)
 
-                # Adversarial training
-                if adversarial:
-                    inputs = self.generate_adversarial_batch(inputs, labels)
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = self.dropout(torch.relu(self.fc2(x)))
+        return self.fc3(x)
 
-                self.optimizer.zero_grad()
-                outputs = self.model(inputs)
-                loss = self.criterion(outputs, labels)
-                loss.backward()
-                self.optimizer.step()
-                epoch_train_loss += loss.item()
+input_dim = train_dataset[0][0].shape[0]
+model = Net(input_dim).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-            # Validation
-            val_loss, val_acc = self.validate()
-            train_loss = epoch_train_loss / len(self.train_loader)
-            train_losses.append(train_loss)
-            val_losses.append(val_loss)
+@timeit
+def train_model(model, train_loader, epochs=15):
+    train_losses = []
+    model.train()
 
-            self.scheduler.step(val_loss)
-
-            print(
-                f"Epoch {epoch + 1}/{epochs} - Train Loss: {train_loss:.4f} - Val Loss: {val_loss:.4f} - Val Acc: {val_acc:.4f}")
-
-            # Save best model
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                torch.save(self.model.state_dict(), "models/best_model.pth")
-
-        return train_losses, val_losses
-
-    def validate(self):
-        self.model.eval()
-        val_loss = 0
+    for epoch in range(epochs):
+        epoch_start = time.time()
+        running_loss = 0.0
         correct = 0
         total = 0
 
-        with torch.no_grad():
-            for inputs, labels in self.val_loader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = self.model(inputs)
-                val_loss += self.criterion(outputs, labels).item()
-                _, predicted = torch.max(outputs.data, 1)
-                total += labels.size(0)
-                correct += (predicted == labels).sum().item()
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
 
-        return val_loss / len(self.val_loader), correct / total
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-    def generate_adversarial_batch(self, inputs, labels):
-        # Convert to ART format
-        classifier = PyTorchClassifier(
-            model=self.model,
-            loss=self.criterion,
-            optimizer=self.optimizer,
-            input_shape=(1, 128, 128),
-            nb_classes=5,
-            clip_values=(0, 1)
-        )
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
 
-        # Randomly select attack type
-        attack_type = np.random.choice(['fgsm', 'pgd'])
+        epoch_loss = running_loss / len(train_loader)
+        epoch_acc = correct / total
+        train_losses.append(epoch_loss)
+        epoch_time = time.time() - epoch_start
 
-        if attack_type == 'fgsm':
-            attack = FastGradientMethod(classifier, **self.attack_params['fgsm'])
-        else:
-            attack = ProjectedGradientDescent(classifier, **self.attack_params['pgd'])
+        print(f"[+] Epoch {epoch + 1}/{epochs} - Loss: {epoch_loss:.4f} - Acc: {epoch_acc:.4f} - Time: {epoch_time:.2f}s")
 
-        x_adv = attack.generate(inputs.cpu().numpy())
-        return torch.FloatTensor(x_adv).to(self.device)
+    return train_losses
 
-    def evaluate_defenses(self):
-        # Load best model
-        self.model.load_state_dict(torch.load("models/best_model.pth"))
+print("[*] Training initial model...")
+train_losses, train_time = train_model(model, train_loader)
 
-        # Standard evaluation
-        clean_acc, clean_cm = self.evaluate(self.test_loader)
+# visu
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+plt.plot(train_losses, label='Training Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Training Loss Over Epochs')
+plt.legend()
 
-        # Attack evaluations
-        fgsm_acc, fgsm_cm = self.evaluate_attack('fgsm')
-        pgd_acc, pgd_cm = self.evaluate_attack('pgd')
-        cw_acc, cw_cm = self.evaluate_attack('carlini')
+plt.subplot(1, 2, 2)
+plt.bar(['Training Time'], [train_time], color='blue')
+plt.ylabel('Time (seconds)')
+plt.title('Training Execution Time')
+plt.tight_layout()
+plt.savefig('img/training_metrics.png')
 
-        # Defense evaluations
-        defenses = {
-            'feature_squeezing': FeatureSqueezing(),
-            'spatial_smoothing': SpatialSmoothing()
-        }
+# fonction d'évaluation
+@timeit
+def evaluate_model(model, dataloader, device):
+    model.eval()
+    all_labels = []
+    all_preds = []
+    total_time = 0
 
-        defense_results = {}
-        for name, defense in defenses.items():
-            def_acc, def_cm = self.evaluate_with_defense(defense)
-            defense_results[name] = (def_acc, def_cm)
+    with torch.no_grad():
+        for inputs, labels in dataloader:
+            start_time = time.time()
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            _, preds = torch.max(outputs, 1)
+            batch_time = time.time() - start_time
+            total_time += batch_time
 
-        # Generate comprehensive report
-        self.generate_report(
-            clean_acc, clean_cm,
-            {'fgsm': fgsm_acc, 'pgd': pgd_acc, 'carlini': cw_acc},
-            {'fgsm': fgsm_cm, 'pgd': pgd_cm, 'carlini': cw_cm},
-            defense_results
-        )
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
 
-    def evaluate(self, dataloader):
-        self.model.eval()
-        all_labels = []
-        all_preds = []
+    accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
+    cm = confusion_matrix(all_labels, all_preds)
+    avg_inference_time = total_time / len(dataloader)
 
-        with torch.no_grad():
-            for inputs, labels in dataloader:
-                inputs, labels = inputs.to(self.device), labels.to(self.device)
-                outputs = self.model(inputs)
-                _, preds = torch.max(outputs, 1)
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(preds.cpu().numpy())
+    print("\n[*] Clean evaluation:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Average inference time per batch: {avg_inference_time:.4f} seconds")
+    print("\nClassification Report:")
+    print(classification_report(all_labels, all_preds))
 
-        accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
-        cm = confusion_matrix(all_labels, all_preds)
-        return accuracy, cm
+    return accuracy, cm, avg_inference_time
 
-    def evaluate_attack(self, attack_type):
-        classifier = PyTorchClassifier(
-            model=self.model,
-            loss=self.criterion,
-            optimizer=self.optimizer,
-            input_shape=(1, 128, 128),
-            nb_classes=5,
-            clip_values=(0, 1)
-        )
+(clean_acc, clean_cm, clean_time), eval_time = evaluate_model(model, test_loader, device)
 
-        if attack_type == 'fgsm':
-            attack = FastGradientMethod(classifier, **self.attack_params['fgsm'])
-        elif attack_type == 'pgd':
-            attack = ProjectedGradientDescent(classifier, **self.attack_params['pgd'])
-        else:
-            attack = CarliniL2Method(classifier, **self.attack_params['carlini'])
-
-        self.model.eval()
-        all_labels = []
-        all_preds = []
-
-        for inputs, labels in self.test_loader:
-            inputs, labels = inputs.to(self.device), labels.to(self.device)
-            x_adv = attack.generate(inputs.cpu().numpy())
-            adv_inputs = torch.FloatTensor(x_adv).to(self.device)
-
-            with torch.no_grad():
-                outputs = self.model(adv_inputs)
-                _, preds = torch.max(outputs, 1)
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(preds.cpu().numpy())
-
-        accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
-        cm = confusion_matrix(all_labels, all_preds)
-        return accuracy, cm
-
-    def evaluate_with_defense(self, defense):
-        classifier = PyTorchClassifier(
-            model=self.model,
-            loss=self.criterion,
-            optimizer=self.optimizer,
-            input_shape=(1, 128, 128),
-            nb_classes=5,
-            clip_values=(0, 1),
-            preprocessing_defences=[defense]
-        )
-
-        self.model.eval()
-        all_labels = []
-        all_preds = []
-
-        for inputs, labels in self.test_loader:
-            inputs, labels = inputs.to(self.device), labels.to(self.device)
-
-            # Apply defense
-            x_def, _ = defense(torch.unsqueeze(inputs, 0))
-            x_def = torch.squeeze(x_def, 0)
-
-            with torch.no_grad():
-                outputs = self.model(x_def)
-                _, preds = torch.max(outputs, 1)
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(preds.cpu().numpy())
-
-        accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
-        cm = confusion_matrix(all_labels, all_preds)
-        return accuracy, cm
-
-    def generate_report(self, clean_acc, clean_cm, attack_accs, attack_cms, defense_results):
-        # Visualization
-        self.plot_results(clean_acc, clean_cm, attack_accs, attack_cms, defense_results)
-
-        # Save metrics
-        metrics = {
-            'clean_accuracy': clean_acc,
-            'attack_accuracies': attack_accs,
-            'defense_accuracies': {k: v[0] for k, v in defense_results.items()}
-        }
-
-        with open("results/metrics.json", "w") as f:
-            json.dump(metrics, f)
-
-        # Generate text report
-        with open("results/report.txt", "w") as f:
-            f.write("=== Adversarial Robustness Report ===\n\n")
-            f.write(f"Clean Accuracy: {clean_acc:.4f}\n\n")
-
-            f.write("Attack Performance:\n")
-            for name, acc in attack_accs.items():
-                f.write(f"{name.upper()}: {acc:.4f} (Drop: {clean_acc - acc:.4f})\n")
-
-            f.write("\nDefense Performance:\n")
-            for name, (acc, _) in defense_results.items():
-                f.write(f"{name}: {acc:.4f}\n")
-
-            f.write("\nRecommendations:\n")
-            f.write("- Implement adversarial training in production\n")
-            f.write("- Combine feature squeezing with spatial smoothing\n")
-            f.write("- Monitor for Carlini-Wagner attacks specifically\n")
-
-    def plot_results(self, clean_acc, clean_cm, attack_accs, attack_cms, defense_results):
-        # Accuracy comparison
-        plt.figure(figsize=(12, 6))
-
-        # Attack comparison
-        plt.subplot(1, 2, 1)
-        x = np.arange(len(attack_accs))
-        plt.bar(x, [clean_acc] * len(x), width=0.3, label='Clean')
-        plt.bar(x + 0.3, attack_accs.values(), width=0.3, label='Under Attack')
-        plt.xticks(x + 0.15, attack_accs.keys())
-        plt.title("Attack Impact on Accuracy")
-        plt.legend()
-
-        # Defense comparison
-        plt.subplot(1, 2, 2)
-        x = np.arange(len(defense_results))
-        plt.bar(x, [clean_acc] * len(x), width=0.3, label='Clean')
-        plt.bar(x + 0.3, [v[0] for v in defense_results.values()], width=0.3, label='With Defense')
-        plt.xticks(x + 0.15, defense_results.keys())
-        plt.title("Defense Effectiveness")
-        plt.legend()
-
-        plt.tight_layout()
-        plt.savefig("img/results_comparison.png")
-
-
-class EnhancedNet(nn.Module):
-    def __init__(self):
-        super(EnhancedNet, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 32, 3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(32, 64, 3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, 3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(),
-            nn.MaxPool2d(2)
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(128 * 16 * 16, 512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(512, 5)
-        )
-
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-        return x
-
-
-class BrainMRIDataset(Dataset):
-    def __init__(self, csv_file, root_dir, transform=None):
-        self.annotations = pd.read_csv(csv_file)
-        self.root_dir = root_dir
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.annotations)
-
-    def __getitem__(self, index):
-        img_name = self.annotations.iloc[index, 0]
-        folder_name = img_name.split('-')[0]
-        img_path = os.path.join(self.root_dir, folder_name, img_name + '.png')
-        image = Image.open(img_path).convert('L')
-        y_label = torch.tensor(self.annotations.iloc[index, 1])
-
-        if self.transform:
-            image = self.transform(image)
-
-        return (image, y_label)
-
-
-if __name__ == "__main__":
-    lab = AdvancedAdversarialLab()
-
-    print("\n=== Standard Training ===")
-    lab.train(epochs=15, adversarial=False)
-
-    print("\n=== Adversarial Training ===")
-    lab.train(epochs=15, adversarial=True)
-
-    print("\n=== Evaluating Defenses ===")
-    lab.evaluate_defenses()
+# les matriceuuuuu
+plt.figure(figsize=(8, 6))
+sns.heatmap(clean_cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['Safe', 'Phishing'],
+            yticklabels=['Safe', 'Phishing'])
+plt.title('Initial Confusion Matrix\nAccuracy: {:.2f}%'.format(clean_acc * 100))
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.savefig('img/initial_confusion_matrix.png')

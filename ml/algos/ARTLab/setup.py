@@ -36,13 +36,12 @@ if not os.path.exists('adni_dataset'):
 else:
     print("[*] Le dataset existe déjà dans le répertoire de travail.")
 
-# lfw_dataset
-if not os.path.exists('lfw_dataset'):
+if not os.path.exists('email-phishing-dataset'):
     try:
-        print("[+] Downloading lfw_dataset...")
-        path = kagglehub.dataset_download("your_dataset_owner/lfw_dataset")
+        print("[+] Downloading email-phishing-dataset...")
+        path = kagglehub.dataset_download("ethancratchley/email-phishing-dataset")
 
-        new_path = os.path.join(os.path.dirname(path), 'lfw_dataset')
+        new_path = os.path.join(os.path.dirname(path), 'email-phishing-dataset')
         os.rename(path, new_path)
 
         shutil.move(new_path, os.getcwd())
