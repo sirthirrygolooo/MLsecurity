@@ -10,7 +10,7 @@ import random
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 project_root = '.'
-results_dir = os.path.join(project_root, 'results', 'minilab')
+results_dir = os.path.join(project_root, 'results-archive', 'minilab')
 os.makedirs(results_dir, exist_ok=True)
 
 def add_trigger(img, size=3):

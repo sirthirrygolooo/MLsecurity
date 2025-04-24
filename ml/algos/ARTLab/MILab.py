@@ -15,7 +15,7 @@ from art.attacks.inference.model_inversion import MIFace
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 import seaborn as sns
 
-output_dir = "results/inversion1"
+output_dir = "results-archive/inversion1"
 os.makedirs(output_dir, exist_ok=True)
 
 def leTailleMeure(method):

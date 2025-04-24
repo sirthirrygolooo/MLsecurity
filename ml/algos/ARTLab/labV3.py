@@ -187,7 +187,7 @@ def plot_metrics(train_losses, cm, accuracy, title_suffix=""):
     plt.ylabel('True')
 
     plt.tight_layout()
-    plt.savefig(f'./results/poisoning/metrics_{title_suffix.lower().replace(" ", "_")}.png')
+    plt.savefig(f'./results-archive/poisoning/metrics_{title_suffix.lower().replace(" ", "_")}.png')
 
 def defense_data_cleaning(dataset, model, device, threshold=0.5):
     clean_data = []
@@ -294,7 +294,7 @@ defended_model = Net(input_dim).to(device)
 optimizer = optim.Adam(defended_model.parameters(), lr=0.001)
 
 print("[*] Training defended model...")
-(defended_train_losses, defended_train_time), _ = train_model(defended_model, cleaned_train_loader)
+defended_train_losses, defended_train_time = train_model(defended_model, cleaned_train_loader)
 
 print("\n[*] Evaluating defended model on clean test data...")
 (defended_acc, defended_cm, defended_time), _ = evaluate_model(defended_model, test_loader, device)
@@ -325,4 +325,4 @@ plt.title('Training Time Comparison')
 plt.ylabel('Time (seconds)')
 
 plt.tight_layout()
-plt.savefig('./results/poisoning/model_comparison.png')
+plt.savefig('./results-archive/poisoning/model_comparison.png')

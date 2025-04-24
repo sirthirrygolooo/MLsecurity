@@ -13,7 +13,7 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, precision_
 # Configuration
 config = {
     "project_root": ".",
-    "results_dir": "./results/minilab",
+    "results_dir": "./results-archive/minilab",
     "batch_size": 64,
     "poison_rate": 0.1,
     "target_label": 7,

@@ -1,7 +1,7 @@
 === Adversarial Attack Benchmark Report ===
 
 Key Findings:
-- The model's accuracy drops from 81.62% to 11.00% under FGSM attack (86.52% reduction)
-- Under more sophisticated PGD attack, accuracy drops further to 8.92%
+- The model's accuracy drops from 80.09% to 11.02% under FGSM attack (86.24% reduction)
+- Under more sophisticated PGD attack, accuracy drops further to 7.97%
 - The average inference time increases significantly under attacks, indicating the computational overhead of generating adversarial examples
 

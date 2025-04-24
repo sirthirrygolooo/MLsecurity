@@ -12,7 +12,7 @@ from art.estimators.classification import PyTorchClassifier
 from art.attacks.inference.model_inversion import MIFace
 from art.attacks.inference.membership_inference import MembershipInferenceBlackBox
 
-output_dir = "results/inversion_lfw"
+output_dir = "results-archive/inversion_lfw"
 os.makedirs(output_dir, exist_ok=True)
 
 def leTailleMeure(method):

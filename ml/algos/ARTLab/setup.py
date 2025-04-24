@@ -36,6 +36,23 @@ if not os.path.exists('adni_dataset'):
 else:
     print("[*] Le dataset existe déjà dans le répertoire de travail.")
 
+# adni dataset 2
+if not os.path.exists('adni_dataset2'):
+    try:
+        print("[+] Downloading adni_dataset2...")
+        path = kagglehub.dataset_download("abdullahtauseef2003/adni-4c-alzheimers-mri-classification-dataset")
+
+        new_path = os.path.join(os.path.dirname(path), 'adni_dataset2')
+        os.rename(path, new_path)
+
+        shutil.move(new_path, os.getcwd())
+
+        print("[*] Dataset téléchargé et déplacé avec succès.")
+    except Exception as e:
+        print(f"[!] Erreur lors du téléchargement ou du déplacement du dataset : {e}")
+else:
+    print("[*] Le dataset existe déjà dans le répertoire de travail.")
+
 if not os.path.exists('email-phishing-dataset'):
     try:
         print("[+] Downloading email-phishing-dataset...")

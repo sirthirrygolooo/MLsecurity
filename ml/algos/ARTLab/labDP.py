@@ -406,7 +406,7 @@ def main():
         f"Reduction in backdoor effectiveness: {(backdoor_success_rate - robust_backdoor_rate) / backdoor_success_rate:.2%}")
 
     print("\n=== Generating Results ===")
-    os.makedirs("results/poisoning", exist_ok=True)
+    os.makedirs("results-archive/poisoning", exist_ok=True)
 
     plt.figure(figsize=(12, 5))
     plt.subplot(1, 2, 1)
@@ -424,7 +424,7 @@ def main():
     plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
     plt.legend()
-    plt.savefig('results/poisoning/training_curves.png')
+    plt.savefig('results-archive/poisoning/training_curves.png')
     plt.close()
 
     plt.figure(figsize=(15, 5))
@@ -439,7 +439,7 @@ def main():
     plt.subplot(1, 3, 3)
     sns.heatmap(robust_cm, annot=True, fmt='d')
     plt.title(f'Robust Model\nAccuracy: {robust_acc:.4f}')
-    plt.savefig('results/poisoning/confusion_matrices.png')
+    plt.savefig('results-archive/poisoning/confusion_matrices.png')
     plt.close()
 
     results = {
@@ -452,9 +452,9 @@ def main():
         'outlier_detection_rate': true_positives / len(flipped_indices) if len(flipped_indices) > 0 else 0
     }
 
-    pd.DataFrame.from_dict(results, orient='index', columns=['Value']).to_csv('results/poisoning/metrics.csv')
+    pd.DataFrame.from_dict(results, orient='index', columns=['Value']).to_csv('results-archive/poisoning/metrics.csv')
 
-    with open('results/poisoning/reports.txt', 'w') as f:
+    with open('results-archive/poisoning/reports.txt', 'w') as f:
         f.write("=== Clean Model ===\n")
         f.write(clean_report)
         f.write("\n\n=== Poisoned Model ===\n")
