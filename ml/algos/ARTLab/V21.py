@@ -21,8 +21,17 @@ def setup_environment():
     """Setup the environment by checking dataset and renaming images if necessary."""
     if not os.path.exists('adni_dataset2/AugmentedAlzheimerDataset/AD/AD-0001.jpg'):
         if not os.path.exists('adni_dataset2'):
-            print('Dataset Missing, run setup.py')
-            exit()
+            print('Dataset Missing, run setup.py ? [y/N]')
+            choice = input()
+            if choice.lower() == 'y':
+                os.system('python setup.py')
+                print('Fin de setup.py\n')
+                print(f"\n Executing {__file__}")
+                print("\n ")
+            else:
+                print("Dataset not found. Exiting.")
+                exit()
+        print("[*] Renaming images...")
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/AD', 'AD')
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/CN', 'CN')
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/EMCI', 'EMCI')
@@ -43,6 +52,7 @@ def create_csv_if_not_exists():
         process_images_to_csv('adni_dataset2/AugmentedAlzheimerDataset/EMCI', 'adni_dataset2/train.csv')
         process_images_to_csv('adni_dataset2/AugmentedAlzheimerDataset/LMCI', 'adni_dataset2/train.csv')
         print(f"Les données ont été enregistrées dans adni_dataset2/train.csv")
+        print("\n[ ] ------------------------------------------------------------")
 
 def process_images_to_csv(directory_path, output_csv_path):
     """Process images in the directory and write to a CSV file."""
@@ -250,7 +260,7 @@ def test_evasion_attack(attack, name, test_loader, device, model):
 
 def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc):
     """Plot attack comparison."""
-    plt.figure(figsize=(15, 5))
+    plt.figure(figsize=(20, 5))
     plt.subplot(1, 3, 1)
     sns.heatmap(clean_cm, annot=True, fmt='d', cmap='Blues')
     plt.title(f'Clean Accuracy: {clean_acc * 100:.2f}%')
@@ -271,12 +281,12 @@ def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_a
 
 def plot_performance_metrics(attack_metrics):
     """Plot performance metrics."""
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(12, 5))
     plt.bar(attack_metrics.keys(), [attack_metrics[key]['accuracy'] for key in attack_metrics], color=['blue', 'red', 'red'])
     plt.ylabel('Accuracy')
     plt.title('Accuracy Under Different Scenarios')
     plt.savefig('img/accuracy_comparison.png')
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(12, 5))
     plt.bar(attack_metrics.keys(), [attack_metrics[key]['time'] for key in attack_metrics], color=['blue', 'red', 'red'])
     plt.ylabel('Average Time per Batch (seconds)')
     plt.title('Inference Time Under Different Scenarios')
@@ -310,10 +320,9 @@ def generate_final_report(clean_acc, fgsm_acc, pgd_acc):
         f.write("=== Adversarial Attack Benchmark Report ===\n\n")
         f.write("Key Findings:\n")
         f.write(f"- The model's accuracy drops from {clean_acc:.2%} to {fgsm_acc:.2%} under FGSM attack ({((clean_acc - fgsm_acc) / clean_acc):.2%} reduction)\n")
-        f.write(f"- Under more sophisticated PGD attack, accuracy drops further to {pgd_acc:.2%}\n")
+        f.write(f"- Under PGD attack, accuracy drops to {pgd_acc:.2%}\n")
         f.write(f"- The average inference time increases significantly under attacks, indicating the computational overhead of generating adversarial examples\n\n")
 
-@timeit
 def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5):
     """Visualize attacks."""
     model.eval()
@@ -356,7 +365,7 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
     plt.savefig('img/attacks/attack_visualization.png')
     plt.close()
     for i, idx in enumerate(indices):
-        fig, axs = plt.subplots(1, 5, figsize=(20, 4))
+        fig, axs = plt.subplots(1, 5, figsize=(24, 4))
         original_img = inputs[idx].cpu().squeeze().numpy()
         fgsm_img = x_adv_fgsm[idx].cpu().squeeze().numpy()
         pgd_img = x_adv_pgd[idx].cpu().squeeze().numpy()
