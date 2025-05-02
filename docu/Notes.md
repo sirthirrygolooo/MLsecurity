@@ -117,6 +117,7 @@ Si cette attaque a un impact négatif important sur l'exactitude de la classific
 [NN](https://ichi.pro/fr/deep-learning-avec-python-reseaux-de-neurones-tutoriel-complet-118007459244784)  
 [Article Full](https://www.enisa.europa.eu/sites/default/files/publications/ENISA%20Report%20-%20Securing%20Machine%20Learning%20Algorithms.pdf)  
 [Attacks](https://jis-eurasipjournals.springeropen.com/articles/10.1186/s13635-024-00158-3)  
+[DeepFool](https://medium.com/machine-intelligence-and-deep-learning-lab/a-review-of-deepfool-a-simple-and-accurate-method-to-fool-deep-neural-networks-b016fba9e48e)
 # Datasets 
 
 https://www.kaggle.com/datasets/proutkarshtiwari/adni-images-for-alzheimer-detection  

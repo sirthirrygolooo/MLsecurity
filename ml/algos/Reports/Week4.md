@@ -78,15 +78,15 @@
     <div class="section-title"><h2>Weekly Objectives</h2></div>
     <div class="section-content">
       <ul>
-        <li><strong>Objective 1:</strong> Focus on attacks and understand how they work</li>
-        <li><strong>Objective 2:</strong> Continue to implement labs on my image datasets</li>
-        <li><strong>Objective 3:</strong> Benchmark the various attacks</li>
+        <li><strong>Objective 1:</strong> Improving the precision of attacks: efficiency and undetectability </li>
+        <li><strong>Objective 2:</strong> Further work on deepfool</li>
+        <li><strong>Objective 3:</strong> Still the idea of benchmarking various attacks</li>
       </ul>
     </div>
   </div>
   <div class="section">
     <div class="section-title"><h2>Summary</h2></div>
-    <h3>Dataset</h3>
+    <h3>Dataset - Still the same</h3>
     <p><strong>Special point</strong>: The dataset I was using has been removed from kaggle. So I found another one, with more images, but which were not prepared like the previous one.</p>
     <p>Source : ADNI database - <a href="https://adni.loni.usc.edu/">ADNI Website</a></p>
     <p>New kaggle source : <a href="https://www.kaggle.com/datasets/abdullahtauseef2003/adni-4c-alzheimers-mri-classification-dataset">Dataset link</a> - Author : <a href="https://www.kaggle.com/abdullahtauseef2003">Abdullah Tauseef</a></p>
@@ -205,22 +205,54 @@
         </ul>
         <h3>DeepFool</h3>
         <ul>
-          <li><strong>Principle:</strong> Iterative attack that assumes the model is approximately linear around the input</li>
+          <li><strong>Principle:</strong> Gradient-based iterative attack assuming local linearity of the model</li>
           <li><strong>How it works:</strong>
             <ul>
-              <li>Computes the minimal perturbation required to cross the decision boundary</li>
-              <li>At each step, approximates the classifier by a linear model and moves toward the closest boundary</li>
-              <li>Stops when the label changes</li>
+              <li>Approximates the classifier as a linear model around the current input</li>
+              <li>At each step, computes the minimal perturbation needed to reach the closest decision boundary</li>
+              <li>Moves slightly toward that boundary and updates the input</li>
+              <li>Stops when the classifier changes its prediction</li>
+              <li>Formally solves: find <code>r</code> such that <code>argmax f(x + r) ≠ argmax f(x)</code>, with minimal <code>||r||</code></li>
             </ul>
           </li>
           <li><strong>Characteristics:</strong>
             <ul>
-              <li>Produces minimal and often imperceptible perturbations</li>
-              <li>Works well for untargeted attacks</li>
-              <li>Relatively fast and effective</li>
+              <li>Iterative and relatively fast</li>
+              <li>Perturbations are minimal and usually imperceptible</li>
+              <li>Non-targeted attack (aims to cause any misclassification)</li>
+              <li>Requires access to model gradients (white-box attack)</li>
+              <li>More precise than FGSM but computationally more expensive</li>
             </ul>
           </li>
         </ul>
+        <div class="img-container">
+          <img src="https://www.researchgate.net/publication/369332060/figure/fig2/AS:11431281177028028@1690336665579/Illustration-of-DeepFool-attack-algorithm.png" alt="DeepFool illustration">
+          <p>Illustration of DeepFool attack algorithm</p>
+        </div>
+        <h4>Explanation of the Scheme</h4>
+        <p>
+          The illustration above represents the DeepFool attack algorithm in action. Here’s a breakdown of the key elements:
+        </p>
+        <ul>
+          <li><strong>Decision Boundaries (Boundary1, Boundary2, Boundary3):</strong>
+            The gray curved lines represent the decision boundaries of a classifier, which separate different classes in the input space. These boundaries are where the classifier's prediction changes.
+          </li>
+          <li><strong>Initial Input <code>x_0</code>:</strong>
+            The point <code>x_0</code> (at the center-bottom) is the original input, correctly classified by the model.
+          </li>
+          <li><strong>Perturbation (Red Arrow):</strong>
+            The red arrow indicates the minimal perturbation applied to <code>x_0</code>> to move it across a decision boundary. DeepFool calculates this perturbation iteratively to ensure it is as small as possible.
+          </li>
+          <li><strong>Perturbed Input <code>x^</code>:</strong>
+            The point <code>x^</code> is the perturbed input, now located on the other side of the decision boundary (Boundary3), resulting in misclassification by the model.
+          </li>
+          <li><strong>Search Region (Green Triangle):</strong>
+            The green dashed triangle represents the region where DeepFool explores to find the minimal perturbation. It iteratively adjusts the input to approach the nearest decision boundary.
+          </li>
+        </ul>
+        <p>
+          This visualization highlights how DeepFool efficiently finds the smallest perturbation needed to fool the classifier, making it a powerful tool for generating adversarial examples.
+        </p>
         <h3>Black Box attacks</h3>
         <ul>
           <li><strong>Principle:</strong> Attacks where the attacker has no access to model internals (weights, gradients, etc.)</li>
@@ -259,7 +291,7 @@
     <div class="section-content">
       <p>Training and tests carried out locally on Nvidia RTX 4060 Laptop GPU, Python 3.10.0</p>
       <hr>
-      <p><strong>20 epochs</strong> — Optimizer Adam - CNN : 2*conv+pooling, 2 fully conn., fn: RelU/p>
+      <p><strong>20 epochs</strong> — Optimizer Adam or SGD (learning rate : 0.004, momentum : 0.9) - CNN : 2*conv+pooling, 2 fully conn., activation function: RelU</p>
       <p>Batch size : 32</p>
       <p>Avg Epoch Time : 75s</p>
       <p><u><strong>Clean Results</strong></u></p>

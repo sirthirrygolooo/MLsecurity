@@ -1,7 +1,9 @@
 === Adversarial Attack Benchmark Report ===
 
 Key Findings:
-- The model's accuracy drops from 81.24% to 10.81% under FGSM attack (86.69% reduction)
-- Under PGD attack, accuracy drops to 8.81%
-- The average inference time increases significantly under attacks, indicating the computational overhead of generating adversarial examples
+- The model's accuracy drops from 87.45% to 65.01% under FGSM attack (25.66% reduction)
+- Under PGD attack, accuracy drops to 62.32%
+- Under DeepFool attack, accuracy drops to 25.69%
+- DeepFool typically finds more efficient perturbations than FGSM/PGD
+- The average inference time increases significantly under attacks, with DeepFool being the most computationally intensive
 
