@@ -280,7 +280,6 @@ def test_evasion_attack(attack, name, test_loader, device, model):
 
 @timeit
 def test_deepfool_attack(test_loader, device, model, art_classifier):
-    """Test DeepFool attack with adjusted parameters for less visible perturbations."""
     model.eval()
     all_labels = []
     all_preds = []
@@ -291,9 +290,8 @@ def test_deepfool_attack(test_loader, device, model, art_classifier):
     for inputs, labels in test_loader:
         attack_start = time.time()
         inputs, labels = inputs.to(device), labels.to(device)
-
+        #print(input)
         try:
-            # Generate adversarial examples
             x_adv = deepfool.generate(inputs.cpu().numpy())
             adv_inputs = torch.FloatTensor(x_adv).to(device)
 
