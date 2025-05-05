@@ -71,7 +71,7 @@
     <div class="section-title"><h2>General Information</h2></div>
     <div class="section-content">
       <p><strong>Name:</strong> FROEHLY Jean-Baptiste</p>
-      <p><strong>Period:</strong> Week 3 - 21/04/2025 to 25/04/2025</p>
+      <p><strong>Period:</strong> Week 4 - 28/04/2025 to 02/05/2025</p>
     </div>
   </div>
   <div class="section">
@@ -293,71 +293,73 @@
       <hr>
       <p><strong>20 epochs</strong> — Optimizer Adam or SGD (learning rate : 0.004, momentum : 0.9) - CNN : 2*conv+pooling, 2 fully conn., activation function: RelU</p>
       <p>Batch size : 32</p>
-      <p>Avg Epoch Time : 75s</p>
+      <p>Avg Epoch Time : 90.67s</p>
       <p><u><strong>Clean Results</strong></u></p>
       <pre><code>
 [*] Clean evaluation:
-Accuracy: 0.8124
-Average inference time per batch: 0.0016 seconds
+Accuracy: 0.8719
+Average inference time per batch: 0.0020 seconds
 
 Classification Report:
               precision    recall  f1-score   support
-           0       0.93      0.94      0.93      1307
-           1       0.82      0.80      0.81      1918
-           2       0.75      0.76      0.75      1847
-           3       0.78      0.79      0.78      1725
-    accuracy                           0.81      6797
-   macro avg       0.82      0.82      0.82      6797
-weighted avg       0.81      0.81      0.81      6797
+           0       0.97      0.99      0.98      1295
+           1       0.89      0.84      0.87      1947
+           2       0.83      0.78      0.81      1765
+           3       0.82      0.90      0.86      1790
+    accuracy                           0.87      6797
+   macro avg       0.88      0.88      0.88      6797
+weighted avg       0.87      0.87      0.87      6797
 
-[TIME] evaluate_model executed in 13.88 seconds</code></pre>
+[TIME] evaluate_model executed in 24.48 seconds</code></pre>
     <p><u><strong>Attack Implementation</strong></u></p>
     <p>FGSM</p>
     <pre><code>
-[*] Attack: FGSM (ε=0.2)
-Accuracy: 0.1081
-Average attack+inference time per batch: 0.0724 seconds
+[*] Attack: FGSM (ε=0.02)
+Accuracy: 0.7138
+Average attack+inference time per batch: 0.0707 seconds
 
 Classification Report:
               precision    recall  f1-score   support
-           0       0.22      0.08      0.12      1307
-           1       0.09      0.09      0.09      1918
-           2       0.08      0.12      0.09      1847
-           3       0.14      0.14      0.14      1725
-    accuracy                           0.11      6797
-   macro avg       0.13      0.11      0.11      6797
-weighted avg       0.13      0.11      0.11      6797
+           0       0.93      0.86      0.90      1295
+           1       0.74      0.65      0.69      1947
+           2       0.58      0.65      0.61      1765
+           3       0.69      0.74      0.71      1790
+    accuracy                           0.71      6797
+   macro avg       0.74      0.73      0.73      6797
+weighted avg       0.72      0.71      0.72      6797
 
-[TIME] test_evasion_attack executed in 25.90 seconds</code></pre>
+[TIME] test_evasion_attack executed in 29.91 seconds</code></pre>
     <p>PGD</p>
     <pre><code>
-[*] Attack: PGD (ε=0.2, iter=10)
-Accuracy: 0.0881
-Average attack+inference time per batch: 0.3330 seconds
+[*] Attack: PGD (ε=0.02, iter=10)
+Accuracy: 0.6955
+Average attack+inference time per batch: 0.3331 seconds
 
 Classification Report:
               precision    recall  f1-score   support
-           0       0.09      0.05      0.06      1307
-           1       0.09      0.09      0.09      1918
-           2       0.06      0.09      0.07      1847
-           3       0.13      0.12      0.12      1725
-    accuracy                           0.09      6797
-   macro avg       0.09      0.09      0.09      6797
-weighted avg       0.09      0.09      0.09      6797
+           0       0.92      0.86      0.89      1295
+           1       0.72      0.63      0.67      1947
+           2       0.56      0.62      0.59      1765
+           3       0.67      0.72      0.69      1790
+    accuracy                           0.70      6797
+   macro avg       0.72      0.71      0.71      6797
+weighted avg       0.70      0.70      0.70      6797
 
-[TIME] test_evasion_attack executed in 81.36 seconds</code></pre>
+[TIME] test_evasion_attack executed in 82.16 seconds</code></pre>
     <hr>
     <pre><code>
 Accuracy Metrics:
-Initial clean accuracy: 0.8124
-Accuracy under FGSM attack: 0.1081 (Drop: 0.7043)
-Accuracy under PGD attack: 0.0881 (Drop: 0.7243)
+Initial clean accuracy: 0.8719
+Accuracy under FGSM attack: 0.7138 (Drop: 0.1580)
+Accuracy under PGD attack: 0.6955 (Drop: 0.1764)
+Accuracy under DeepFool attack: 0.1487 (Drop: 0.7231)
 
 Performance Metrics:
-Standard training time: 1526.77 seconds
-Average clean inference time: 0.0016 seconds per batch
-Average FGSM attack+inference time: 0.0724 seconds per batch
-Average PGD attack+inference time: 0.3330 seconds per batch</code></pre>
+Standard training time: 1906.31 seconds
+Average clean inference time: 0.0020 seconds per batch
+Average FGSM attack+inference time: 0.0707 seconds per batch
+Average PGD attack+inference time: 0.3331 seconds per batch
+Average DeepFool attack+inference time: 5.4564 seconds per batch</code></pre>
     <hr>
     <h3>Images</h3>
     <div class="img-container">
@@ -365,59 +367,72 @@ Average PGD attack+inference time: 0.3330 seconds per batch</code></pre>
       <p>Fig.0 Attack comparizon for ε=0.4</p>
     </div>
     <div class="img-container">
-      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img2/attacks/attack_visualization.png" alt="attack_comparison2">
-      <p>Fig.1 Attack comparison for ε=0.2</p>
+      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img3/attacks/attack_visualization.png" alt="attack_comparison2">
+      <p>Fig.1 Attack comparison for ε=0.02</p>
     </div>
     <div class="img-container">
-      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img2/accuracy_comparison.png" alt="Accuracy comparison">
-      <p>Fig.3 Accuracy comparison</p>
+      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img3/attacks/attack_example_0.png" alt="attack_example">
+      <p>Fig.2 Attack comparison for ε=0.02 with DeepFool</p>
     </div>
     <div class="img-container">
-      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img2/attack_comparison.png" alt="Confusion Matrix">
-      <p>Fig.4 Confusion Matrix comparison</p>
+      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img3/attacks/attack_example_4.png" alt="attack_example2">
+      <p>Fig.3 Attack comparison for ε=0.02 with DeepFool other example</p>
     </div>
     <div class="img-container">
-      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img2/time_comparison.png" alt="Time comparison">
-      <p>Fig.5 Inference time comparison</p>
+      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img3/performance_comparison.png" alt="Accuracy comparison">
+      <p>Fig.4 Accuracy comparison</p>
     </div>
     <div class="img-container">
-      <img src="https://github.com/sirthirrygolooo/MLsecurity/blob/master/ml/algos/ARTLab/results-archive/img2/training_metrics.png?raw=true" alt="training_metrics">
+      <img src="https://raw.githubusercontent.com/sirthirrygolooo/MLsecurity/refs/heads/master/ml/algos/ARTLab/results-archive/img3/attack_comparison.png" alt="Confusion Matrix">
+      <p>Fig.5 Confusion Matrix comparison</p>
+    </div>
+    <div class="img-container">
+      <img src="https://github.com/sirthirrygolooo/MLsecurity/blob/master/ml/algos/ARTLab/results-archive/img3/training_metrics.png?raw=true" alt="training_metrics">
       <p>Fig.6 Training Metrics (20 epochs)</p>
     </div>
-  </div>
     <div class="section">
       <div class="section-title"><h2>Analysis and Interpretation</h2></div>
       <div class="section-content">
-        <p>As we can see, the level of perturbation ε plays a big part in visibility for human eyes. <br> It's also easy to see that PGD is much more precise on contours and patterns.</p>
+        <p></p>
+        <p>We can see that it's very easy to obtain invisble perturbation for Human eye with FGSM and PGD with an interessant efficiency of attack.</p>
+        <p>We can also see that DeepFool, at least with the parameters used so far, is not as discreet as expected on grayscale images of this type. It's undeniably extremely effective, but the difference is easily distinguishable </p>
         <h3>Initial Model Performance</h3>
         <h4>Clean Data</h4>
         <ul>
-          <li>Accuracy: 81.24%</li>
-          <li>Very strong performance on class 0 (f1-score = 0.93)</li>
-          <li>Consistent results across other classes (f1-scores between 0.75 and 0.81)</li>
-          <li>Macro average f1-score: 0.82 → well-balanced model</li>
+          <li>Accuracy: 87.19%</li>
+          <li>Excellent performance on class 0 (f1-score = 0.98)</li>
+          <li>Balanced results across other classes with f1-scores between 0.81 and 0.87</li>
+          <li>Macro average f1-score: 0.88 → indicates good generalization across classes</li>
+          <li>Fast inference: 0.0020 seconds per batch</li>
         </ul>
         <h3>Impact of Adversarial Attacks</h3>
-        <h4>FGSM (ε = 0.2)</h4>
+        <h4>FGSM (ε = 0.02)</h4>
         <ul>
-          <li>Accuracy: 10.81% → <strong>drop of 70.43 points</strong></li>
-          <li>Severe performance degradation across all classes (f1-scores around 0.1)</li>
-          <li>The model is easily fooled, predictions become nearly random</li>
-          <li>Attack + inference time: 0.0724s per batch</li>
+          <li>Accuracy: 71.38% → <strong>drop of 15.80 points</strong></li>
+          <li>Significant decline in performance on classes 1–3 (f1-scores range from 0.61 to 0.71)</li>
+          <li>Class 0 remains relatively robust (f1-score = 0.90)</li>
+          <li>Attack + inference time: 0.0707 seconds per batch (×35 slower than clean)</li>
         </ul>
-        <h4>PGD (ε = 0.2, 10 iterations)</h4>
+        <h4>PGD (ε = 0.02, 10 iterations)</h4>
         <ul>
-          <li>Accuracy: 8.81% → <strong>drop of 72.43 points</strong></li>
-          <li>Even more destructive than FGSM</li>
-          <li>The model completely loses its generalization ability</li>
-          <li>Attack + inference time: 0.3330s per batch (about ×200 slower than clean inference)</li>
+          <li>Accuracy: 69.55% → <strong>drop of 17.64 points</strong></li>
+          <li>More impactful than FGSM, especially on classes 1 and 2</li>
+          <li>f1-scores drop further (as low as 0.59 for class 2)</li>
+          <li>Attack + inference time: 0.3331 seconds per batch (×166 slower than clean)</li>
+        </ul>
+        <h4>DeepFool</h4>
+        <ul>
+          <li>Accuracy: 14.87% → <strong>drop of 72.31 points</strong></li>
+          <li>Catastrophic degradation — the model fails to make meaningful predictions</li>
+          <li>Highlights extreme sensitivity to subtle, well-crafted perturbations</li>
+          <li>Attack + inference time: 5.4564 seconds per batch (over ×2700 slower than clean inference)</li>
         </ul>
         <h3>Conclusion</h3>
         <ul>
-          <li>The model performs excellently on clean data</li>
-          <li>But it is highly vulnerable to adversarial attacks, even basic ones like FGSM</li>
-          <li>PGD shows that minimal perturbations can entirely derail the model</li>
-          <li>This analysis highlights the importance of considering security in deep learning systems</li>
+          <li>The model performs very well on clean data, with high and balanced accuracy</li>
+          <li>However, it is vulnerable to even low-magnitude adversarial attacks (ε = 0.02)</li>
+          <li>PGD and especially DeepFool demonstrate how easily the model's performance can collapse</li>
+          <li>These results emphasize the necessity of integrating adversarial robustness into model development pipelines</li>
         </ul>
       </div>
     </div>
@@ -425,25 +440,17 @@ Average PGD attack+inference time: 0.3330 seconds per batch</code></pre>
     <div class="section-title"><h2>Difficulties Encountered</h2></div>
     <div class="section-content">
       <ul>
-        <li><strong>Problem 1:</strong> Find another way of implementing C&W, my current algo is far too long so I don't have any results yet.</li>
-        <li><strong>Problem 2:</strong> Dataset change</li>
-      </ul>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title"><h2>Next Steps</h2></div>
-    <div class="section-content">
-      <ul>
-        <li><strong>Objective 1:</strong>Implementation of C&W, DeepFool</li>
-        <li><strong>Objective 2:</strong>Maybe try with another CNN structure to see reaction</li>
-        <li><strong>Objective 3:</strong>Try these attacks on another type of data</li>
-        <li><strong>Objective 4:</strong>Go back on backdoor and more generally data poisoning attacks</li>
+        <li><strong>Problem 1:</strong> I had problems with C&W : the execution takes far too long, I've never been able to afford to finish one, so either I have to completely revise the parameters, 
+or I have to abandon the idea of implementing this attack.</li>
+        <li><strong>Problem 2:</strong> DeepFool doesn't behave very well on my images, so I think I need to review my settings in detail to try other things. 
+I'm not sure whether it's a question of the dataset or the parameters, given that on paper,
+according to the maths behind it, there's no reason why you can't get interesting and effective results.</li>
       </ul>
     </div>
   </div>
   <div class="section">
     <div class="signature">
-      <p>FROEHLY Jean-Baptiste, Friday 25/04/2025</p>
+      <p>FROEHLY Jean-Baptiste, Friday 02/05/2025</p>
     </div>
   </div>
 </body>

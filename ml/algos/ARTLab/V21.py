@@ -385,7 +385,6 @@ def save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, clean_time, fgsm_ti
 
 def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
                         clean_time, fgsm_time, pgd_time, deepfool_time):
-    """Print final summary including DeepFool."""
     print("\n=== Final Summary ===")
     print("\nAccuracy Metrics:")
     print(f"Initial clean accuracy: {clean_acc:.4f}")
@@ -416,7 +415,6 @@ def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc):
 
 
 def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5):
-    """Visualize attacks including DeepFool."""
     model.eval()
     os.makedirs("img/attacks", exist_ok=True)
     inputs, labels = next(iter(test_loader))
@@ -479,13 +477,11 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
 
 
 def main():
-    # Setup environment and data
     setup_environment()
     create_csv_if_not_exists()
     shuffle_csv('adni_dataset2/train.csv')
     device = set_device()
 
-    # Define transformations
     transform = transforms.Compose([
         transforms.Resize((200, 190)),
         transforms.ToTensor(),
