@@ -4,3 +4,4 @@
 /ml/algos/ARTLab/email-phishing-dataset/
 /ml/algos/ARTLab/data/
 /.venv/
+/model/*.pth
