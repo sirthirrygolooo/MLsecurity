@@ -16,7 +16,7 @@ from art.estimators.classification import PyTorchClassifier
 from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent, DeepFool
 
 EPSILON = 0.02
-
+MODEL_PATH = 'model/brain_mri_model.pth'
 
 def setup_environment():
     """Setup the environment by checking dataset and renaming images if necessary."""
@@ -38,7 +38,6 @@ def setup_environment():
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/EMCI', 'EMCI')
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/LMCI', 'LMCI')
 
-
 def rename_images_in_directory(directory_path, prefix):
     """Rename images in the directory with a given prefix."""
     files = sorted(os.listdir(directory_path))
@@ -46,9 +45,7 @@ def rename_images_in_directory(directory_path, prefix):
         new_name = f"{prefix}-{counter:04d}{os.path.splitext(filename)[1]}"
         os.rename(os.path.join(directory_path, filename), os.path.join(directory_path, new_name))
 
-
 def create_csv_if_not_exists():
-    """Create a CSV file from images if it doesn't exist."""
     if not os.path.exists('adni_dataset2/train.csv'):
         process_images_to_csv('adni_dataset2/AugmentedAlzheimerDataset/AD', 'adni_dataset2/train.csv')
         process_images_to_csv('adni_dataset2/AugmentedAlzheimerDataset/CN', 'adni_dataset2/train.csv')
@@ -56,7 +53,6 @@ def create_csv_if_not_exists():
         process_images_to_csv('adni_dataset2/AugmentedAlzheimerDataset/LMCI', 'adni_dataset2/train.csv')
         print(f"Les données ont été enregistrées dans adni_dataset2/train.csv")
         print("\n[ ] ------------------------------------------------------------")
-
 
 def process_images_to_csv(directory_path, output_csv_path):
     """Process images in the directory and write to a CSV file."""
@@ -70,13 +66,11 @@ def process_images_to_csv(directory_path, output_csv_path):
             diagnosis = {'AD': 3, 'LMCI': 2, 'EMCI': 1, 'CN': 0}.get(name_without_extension.split('-')[0], -1)
             writer.writerow({'id_code': name_without_extension, 'diagnosis': diagnosis})
 
-
 def shuffle_csv(input_csv):
     """Shuffle the CSV file."""
     df = pd.read_csv(input_csv)
     df = df.sample(frac=1).reset_index(drop=True)
     df.to_csv(input_csv, index=False)
-
 
 def timeit(method):
     """Decorator to measure the execution time of a function."""
@@ -90,7 +84,6 @@ def timeit(method):
 
     return timed
 
-
 def set_device():
     """Set the device for training."""
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -100,7 +93,6 @@ def set_device():
         print(f"[*] CUDA Version: {torch.version.cuda}")
         print(f"[*] GPU Memory: {torch.cuda.get_device_properties(device).total_memory / 1024 ** 3:.2f} GB")
     return device
-
 
 class BrainMRIDataset(Dataset):
     """Dataset class for Brain MRI images."""
@@ -123,7 +115,6 @@ class BrainMRIDataset(Dataset):
             image = self.transform(image)
         return image, y_label
 
-
 @timeit
 def prepare_data(csv_file, root_dir, transform):
     """Prepare data loaders for training and testing."""
@@ -134,7 +125,6 @@ def prepare_data(csv_file, root_dir, transform):
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
     return train_loader, test_loader, train_dataset, test_dataset
-
 
 class Net(nn.Module):
     """CNN model for classification."""
@@ -157,7 +147,6 @@ class Net(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.dropout(torch.relu(self.fc1(x)))
         return self.fc2(x)
-
 
 @timeit
 def train_model(model, train_loader, criterion, optimizer, device, epochs=20):
@@ -188,7 +177,6 @@ def train_model(model, train_loader, criterion, optimizer, device, epochs=20):
             f"[+] Epoch {epoch + 1}/{epochs} - Loss: {epoch_loss:.4f} - Acc: {epoch_acc:.4f} - Time: {epoch_time:.2f}s")
     return train_losses
 
-
 def plot_training_metrics(train_losses, train_time):
     """Plot training metrics."""
     plt.figure(figsize=(12, 5))
@@ -204,7 +192,6 @@ def plot_training_metrics(train_losses, train_time):
     plt.title('Training Execution Time')
     plt.tight_layout()
     plt.savefig('img/training_metrics.png')
-
 
 @timeit
 def evaluate_model(model, dataloader, device, criterion, attack_name=None):
@@ -236,7 +223,6 @@ def evaluate_model(model, dataloader, device, criterion, attack_name=None):
     print(classification_report(all_labels, all_preds))
     return accuracy, cm, avg_inference_time
 
-
 def plot_confusion_matrix(cm, accuracy, title, filename):
     """Plot confusion matrix."""
     plt.figure(figsize=(8, 6))
@@ -247,7 +233,6 @@ def plot_confusion_matrix(cm, accuracy, title, filename):
     plt.xlabel('Predicted')
     plt.ylabel('True')
     plt.savefig(filename)
-
 
 @timeit
 def test_evasion_attack(attack, name, test_loader, device, model):
@@ -319,8 +304,6 @@ def test_deepfool_attack(test_loader, device, model, art_classifier):
 
     return accuracy, cm, avg_time
 
-
-
 def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc, deepfool_cm, deepfool_acc):
     """Plot attack comparison including DeepFool."""
     plt.figure(figsize=(20, 5))
@@ -351,7 +334,6 @@ def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_a
     plt.tight_layout()
     plt.savefig('img/attack_comparison.png')
 
-
 def plot_performance_metrics(attack_metrics):
     """Plot performance metrics."""
     plt.figure(figsize=(15, 5))
@@ -370,7 +352,6 @@ def plot_performance_metrics(attack_metrics):
     plt.tight_layout()
     plt.savefig('img/performance_comparison.png')
 
-
 def save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, clean_time, fgsm_time, pgd_time, deepfool_time):
     """Save metrics to CSV including DeepFool."""
     metrics_df = pd.DataFrame({
@@ -379,7 +360,6 @@ def save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, clean_time, fgsm_ti
         'Inference Time': [clean_time, fgsm_time, pgd_time, deepfool_time]
     })
     metrics_df.to_csv('results/metrics_comparison.csv', index=False)
-
 
 def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
                         clean_time, fgsm_time, pgd_time, deepfool_time):
@@ -397,7 +377,6 @@ def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
     print(f"Average PGD attack+inference time: {pgd_time:.4f} seconds per batch")
     print(f"Average DeepFool attack+inference time: {deepfool_time:.4f} seconds per batch")
 
-
 def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc):
     """Generate final report including DeepFool."""
     with open('results/txt/final_report.txt', 'w') as f:
@@ -410,7 +389,6 @@ def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc):
         f.write("- DeepFool typically finds more efficient perturbations than FGSM/PGD\n")
         f.write(
             "- The average inference time increases significantly under attacks, with DeepFool being the most computationally intensive\n\n")
-
 
 def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5):
     model.eval()
@@ -473,6 +451,16 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
         plt.savefig(f'img/attacks/attack_example_{i}.png')
         plt.close()
 
+def save_model(model, path=MODEL_PATH):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    torch.save(model.state_dict(), path)
+    print(f"Model saved to {path}")
+
+def load_model(model, path=MODEL_PATH, device='cpu'):
+    """Load the model from a file."""
+    model.load_state_dict(torch.load(path, map_location=device))
+    print(f"Model loaded from {path}")
+    return model
 
 def main():
     setup_environment()
@@ -493,13 +481,18 @@ def main():
     # Initialize model
     model = Net().to(device)
     criterion = nn.CrossEntropyLoss()
-    #optimizer = optim.Adam(model.parameters(), lr=0.001)
     optimizer = optim.SGD(model.parameters(), lr=0.004, momentum=0.9)
 
-    # Train model
-    print("[*] Training initial model...")
-    train_losses, train_time = train_model(model, train_loader, criterion, optimizer, device)
-    plot_training_metrics(train_losses, train_time)
+    # Check if the model is already trained
+    if os.path.exists(MODEL_PATH):
+        print("[*] Loading pre-trained model...")
+        model = load_model(model, device=device)
+    else:
+        # Train model
+        print("[*] Training initial model...")
+        train_losses, train_time = train_model(model, train_loader, criterion, optimizer, device)
+        plot_training_metrics(train_losses, train_time)
+        save_model(model)
 
     # Evaluate clean performance
     (clean_acc, clean_cm, clean_time), eval_time = evaluate_model(model, test_loader, device, criterion)
@@ -551,7 +544,6 @@ def main():
     # Visualize attacks
     print("\n[*] Generating attack visualizations...")
     visualize_attacks(model, test_loader, device, art_classifier)
-
 
 if __name__ == "__main__":
     main()
