@@ -5,3 +5,4 @@
 /ml/algos/ARTLab/data/
 /.venv/
 /model/*.pth
+ml/algos/ARTLab/model/brain_mri_model.pth
