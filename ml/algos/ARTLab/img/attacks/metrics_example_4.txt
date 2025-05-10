@@ -1,0 +1,32 @@
+Epsilon: 0.01
+FGSM - Percent Changed: 98.28%, SSIM: 0.9980, PSNR: 46.1077
+PGD - Percent Changed: 98.37%, SSIM: 0.9980, PSNR: 46.1040
+
+Epsilon: 0.02
+FGSM - Percent Changed: 98.28%, SSIM: 0.9923, PSNR: 40.0990
+PGD - Percent Changed: 98.47%, SSIM: 0.9924, PSNR: 40.0906
+
+Epsilon: 0.05
+FGSM - Percent Changed: 98.28%, SSIM: 0.9610, PSNR: 32.1762
+PGD - Percent Changed: 98.83%, SSIM: 0.9626, PSNR: 32.1531
+
+Epsilon: 0.1
+FGSM - Percent Changed: 98.28%, SSIM: 0.8939, PSNR: 26.2146
+PGD - Percent Changed: 95.82%, SSIM: 0.8994, PSNR: 26.3628
+
+Epsilon: 0.2
+FGSM - Percent Changed: 98.28%, SSIM: 0.7559, PSNR: 20.3189
+PGD - Percent Changed: 98.17%, SSIM: 0.7673, PSNR: 20.5034
+
+Epsilon: 0.4
+FGSM - Percent Changed: 98.28%, SSIM: 0.5074, PSNR: 14.5754
+PGD - Percent Changed: 98.08%, SSIM: 0.5292, PSNR: 14.8890
+
+Epsilon: 0.7
+FGSM - Percent Changed: 98.28%, SSIM: 0.1891, PSNR: 10.1543
+PGD - Percent Changed: 98.13%, SSIM: 0.2317, PSNR: 10.6372
+
+Epsilon: 0.9
+FGSM - Percent Changed: 98.28%, SSIM: 0.0045, PSNR: 8.3744
+PGD - Percent Changed: 98.16%, SSIM: 0.0584, PSNR: 8.8740
+

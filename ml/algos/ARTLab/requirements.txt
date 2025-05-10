@@ -8,6 +8,7 @@ kagglehub
 seaborn
 plotly
 adversarial-robustness-toolbox==1.14.0
+scikit-image
 
 # PyTorch CUDA 12.1 support
 torch==2.1.0+cu126

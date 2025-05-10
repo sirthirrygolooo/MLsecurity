@@ -13,10 +13,10 @@ from PIL import Image
 from sklearn.metrics import confusion_matrix, classification_report
 import seaborn as sns
 from art.estimators.classification import PyTorchClassifier
-from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent, DeepFool
+from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent, DeepFool, CarliniL2Method, UniversalPerturbation
 
 EPSILON = 0.02
-MODEL_PATH = 'model/brain_mri_modelV2.pth'
+MODEL_PATH = 'model/brain_mri_model.pth'
 
 def setup_environment():
     """Setup the environment by checking dataset and renaming images if necessary."""
@@ -304,30 +304,122 @@ def test_deepfool_attack(test_loader, device, model, art_classifier):
 
     return accuracy, cm, avg_time
 
-def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc, deepfool_cm, deepfool_acc):
-    """Plot attack comparison including DeepFool."""
-    plt.figure(figsize=(20, 5))
-    plt.subplot(1, 4, 1)
+@timeit
+def test_cw_attack(test_loader, device, model, art_classifier):
+    model.eval()
+    all_labels = []
+    all_preds = []
+    total_time = 0
+
+    cw = CarliniL2Method(art_classifier, confidence=0.1, targeted=False, learning_rate=0.01, max_iter=10)
+
+    for inputs, labels in test_loader:
+        attack_start = time.time()
+        inputs, labels = inputs.to(device), labels.to(device)
+        try:
+            x_adv = cw.generate(inputs.cpu().numpy())
+            adv_inputs = torch.FloatTensor(x_adv).to(device)
+
+            with torch.no_grad():
+                outputs = model(adv_inputs)
+                _, preds = torch.max(outputs, 1)
+
+            batch_time = time.time() - attack_start
+            total_time += batch_time
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
+        except Exception as e:
+            print(f"Error during C&W attack: {e}")
+            continue
+
+    accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
+    cm = confusion_matrix(all_labels, all_preds)
+    avg_time = total_time / len(test_loader)
+
+    print(f"\n[*] Attack: C&W")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Average attack+inference time per batch: {avg_time:.4f} seconds")
+    print("\nClassification Report:")
+    print(classification_report(all_labels, all_preds))
+
+    return accuracy, cm, avg_time
+
+@timeit
+def test_universal_perturbation_attack(test_loader, device, model, art_classifier):
+    model.eval()
+    all_labels = []
+    all_preds = []
+    total_time = 0
+
+    universal_perturbation = UniversalPerturbation(art_classifier, attacker='fgsm', eps=EPSILON, max_iter=10)
+
+    for inputs, labels in test_loader:
+        attack_start = time.time()
+        inputs, labels = inputs.to(device), labels.to(device)
+        try:
+            x_adv = universal_perturbation.generate(inputs.cpu().numpy())
+            adv_inputs = torch.FloatTensor(x_adv).to(device)
+
+            with torch.no_grad():
+                outputs = model(adv_inputs)
+                _, preds = torch.max(outputs, 1)
+
+            batch_time = time.time() - attack_start
+            total_time += batch_time
+            all_labels.extend(labels.cpu().numpy())
+            all_preds.extend(preds.cpu().numpy())
+        except Exception as e:
+            print(f"Error during Universal Perturbation attack: {e}")
+            continue
+
+    accuracy = (np.array(all_preds) == np.array(all_labels)).mean()
+    cm = confusion_matrix(all_labels, all_preds)
+    avg_time = total_time / len(test_loader)
+
+    print(f"\n[*] Attack: Universal Perturbation")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Average attack+inference time per batch: {avg_time:.4f} seconds")
+    print("\nClassification Report:")
+    print(classification_report(all_labels, all_preds))
+
+    return accuracy, cm, avg_time
+
+def plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc, deepfool_cm, deepfool_acc, cw_cm, cw_acc, universal_cm, universal_acc):
+    """Plot attack comparison including all attacks."""
+    plt.figure(figsize=(25, 5))
+    plt.subplot(1, 6, 1)
     sns.heatmap(clean_cm, annot=True, fmt='d', cmap='Blues')
     plt.title(f'Clean Accuracy: {clean_acc * 100:.2f}%')
     plt.xlabel('Predicted')
     plt.ylabel('True')
 
-    plt.subplot(1, 4, 2)
+    plt.subplot(1, 6, 2)
     sns.heatmap(fgsm_cm, annot=True, fmt='d', cmap='Reds')
     plt.title(f'FGSM Attack Accuracy: {fgsm_acc * 100:.2f}%')
     plt.xlabel('Predicted')
     plt.ylabel('True')
 
-    plt.subplot(1, 4, 3)
+    plt.subplot(1, 6, 3)
     sns.heatmap(pgd_cm, annot=True, fmt='d', cmap='Reds')
     plt.title(f'PGD Attack Accuracy: {pgd_acc * 100:.2f}%')
     plt.xlabel('Predicted')
     plt.ylabel('True')
 
-    plt.subplot(1, 4, 4)
+    plt.subplot(1, 6, 4)
     sns.heatmap(deepfool_cm, annot=True, fmt='d', cmap='Reds')
     plt.title(f'DeepFool Accuracy: {deepfool_acc * 100:.2f}%')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+
+    plt.subplot(1, 6, 5)
+    sns.heatmap(cw_cm, annot=True, fmt='d', cmap='Reds')
+    plt.title(f'C&W Accuracy: {cw_acc * 100:.2f}%')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+
+    plt.subplot(1, 6, 6)
+    sns.heatmap(universal_cm, annot=True, fmt='d', cmap='Reds')
+    plt.title(f'Universal Perturbation Accuracy: {universal_acc * 100:.2f}%')
     plt.xlabel('Predicted')
     plt.ylabel('True')
 
@@ -339,36 +431,38 @@ def plot_performance_metrics(attack_metrics):
     plt.figure(figsize=(15, 5))
     plt.subplot(1, 2, 1)
     plt.bar(attack_metrics.keys(), [attack_metrics[key]['accuracy'] for key in attack_metrics],
-            color=['blue', 'red', 'red', 'red'])
+            color=['blue', 'red', 'red', 'red', 'red', 'red'])
     plt.ylabel('Accuracy')
     plt.title('Accuracy Under Different Scenarios')
 
     plt.subplot(1, 2, 2)
     plt.bar(attack_metrics.keys(), [attack_metrics[key]['time'] for key in attack_metrics],
-            color=['blue', 'red', 'red', 'red'])
+            color=['blue', 'red', 'red', 'red', 'red', 'red'])
     plt.ylabel('Average Time per Batch (seconds)')
     plt.title('Inference Time Under Different Scenarios')
 
     plt.tight_layout()
     plt.savefig('img/performance_comparison.png')
 
-def save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, clean_time, fgsm_time, pgd_time, deepfool_time):
-    """Save metrics to CSV including DeepFool."""
+def save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc, clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time):
+    """Save metrics to CSV including all attacks."""
     metrics_df = pd.DataFrame({
-        'Scenario': ['Clean', 'FGSM Attack', 'PGD Attack', 'DeepFool Attack'],
-        'Accuracy': [clean_acc, fgsm_acc, pgd_acc, deepfool_acc],
-        'Inference Time': [clean_time, fgsm_time, pgd_time, deepfool_time]
+        'Scenario': ['Clean', 'FGSM Attack', 'PGD Attack', 'DeepFool Attack', 'C&W Attack', 'Universal Perturbation'],
+        'Accuracy': [clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc],
+        'Inference Time': [clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time]
     })
     metrics_df.to_csv('results/metrics_comparison.csv', index=False)
 
-def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
-                        clean_time, fgsm_time, pgd_time, deepfool_time):
+def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc, train_time,
+                        clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time):
     print("\n=== Final Summary ===")
     print("\nAccuracy Metrics:")
     print(f"Initial clean accuracy: {clean_acc:.4f}")
     print(f"Accuracy under FGSM attack: {fgsm_acc:.4f} (Drop: {(clean_acc - fgsm_acc):.4f})")
     print(f"Accuracy under PGD attack: {pgd_acc:.4f} (Drop: {(clean_acc - pgd_acc):.4f})")
     print(f"Accuracy under DeepFool attack: {deepfool_acc:.4f} (Drop: {(clean_acc - deepfool_acc):.4f})")
+    print(f"Accuracy under C&W attack: {cw_acc:.4f} (Drop: {(clean_acc - cw_acc):.4f})")
+    print(f"Accuracy under Universal Perturbation attack: {universal_acc:.4f} (Drop: {(clean_acc - universal_acc):.4f})")
 
     print("\nPerformance Metrics:")
     print(f"Standard training time: {train_time:.2f} seconds")
@@ -376,9 +470,11 @@ def print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
     print(f"Average FGSM attack+inference time: {fgsm_time:.4f} seconds per batch")
     print(f"Average PGD attack+inference time: {pgd_time:.4f} seconds per batch")
     print(f"Average DeepFool attack+inference time: {deepfool_time:.4f} seconds per batch")
+    print(f"Average C&W attack+inference time: {cw_time:.4f} seconds per batch")
+    print(f"Average Universal Perturbation attack+inference time: {universal_time:.4f} seconds per batch")
 
-def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc):
-    """Generate final report including DeepFool."""
+def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc):
+    """Generate final report including all attacks."""
     with open('results/txt/final_report.txt', 'w') as f:
         f.write("=== Adversarial Attack Benchmark Report ===\n\n")
         f.write("Key Findings:\n")
@@ -386,6 +482,8 @@ def generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc):
             f"- The model's accuracy drops from {clean_acc:.2%} to {fgsm_acc:.2%} under FGSM attack ({((clean_acc - fgsm_acc) / clean_acc):.2%} reduction)\n")
         f.write(f"- Under PGD attack, accuracy drops to {pgd_acc:.2%}\n")
         f.write(f"- Under DeepFool attack, accuracy drops to {deepfool_acc:.2%}\n")
+        f.write(f"- Under C&W attack, accuracy drops to {cw_acc:.2%}\n")
+        f.write(f"- Under Universal Perturbation attack, accuracy drops to {universal_acc:.2%}\n")
         f.write("- DeepFool typically finds more efficient perturbations than FGSM/PGD\n")
         f.write(
             "- The average inference time increases significantly under attacks, with DeepFool being the most computationally intensive\n\n")
@@ -400,24 +498,32 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
     fgsm = FastGradientMethod(art_classifier, eps=EPSILON)
     pgd = ProjectedGradientDescent(art_classifier, eps=EPSILON, max_iter=10)
     deepfool = DeepFool(art_classifier, max_iter=50, epsilon=1e-6)
+    cw = CarliniL2Method(art_classifier, confidence=0.1, targeted=False, learning_rate=0.01, max_iter=10)
+    universal_perturbation = UniversalPerturbation(art_classifier, attacker='fgsm', eps=EPSILON, max_iter=10)
 
     # Generate adversarial examples
     x_adv_fgsm = torch.FloatTensor(fgsm.generate(inputs.cpu().numpy())).to(device)
     x_adv_pgd = torch.FloatTensor(pgd.generate(inputs.cpu().numpy())).to(device)
     x_adv_deepfool = torch.FloatTensor(deepfool.generate(inputs.cpu().numpy())).to(device)
+    x_adv_cw = torch.FloatTensor(cw.generate(inputs.cpu().numpy())).to(device)
+    x_adv_universal = torch.FloatTensor(universal_perturbation.generate(inputs.cpu().numpy())).to(device)
 
     indices = np.random.choice(len(inputs), num_examples, replace=False)
 
     for i, idx in enumerate(indices):
-        fig, axs = plt.subplots(1, 7, figsize=(28, 4))
+        fig, axs = plt.subplots(1, 11, figsize=(35, 4))
         original_img = inputs[idx].cpu().squeeze().numpy()
         fgsm_img = x_adv_fgsm[idx].cpu().squeeze().numpy()
         pgd_img = x_adv_pgd[idx].cpu().squeeze().numpy()
         deepfool_img = x_adv_deepfool[idx].cpu().squeeze().numpy()
+        cw_img = x_adv_cw[idx].cpu().squeeze().numpy()
+        universal_img = x_adv_universal[idx].cpu().squeeze().numpy()
 
         fgsm_diff = np.abs(original_img - fgsm_img)
         pgd_diff = np.abs(original_img - pgd_img)
         deepfool_diff = np.abs(original_img - deepfool_img)
+        cw_diff = np.abs(original_img - cw_img)
+        universal_diff = np.abs(original_img - universal_img)
 
         axs[0].imshow(original_img, cmap='gray')
         axs[0].set_title(f"Original (Label: {labels[idx].item()})")
@@ -446,6 +552,22 @@ def visualize_attacks(model, test_loader, device, art_classifier, num_examples=5
         axs[6].imshow(deepfool_diff, cmap='hot')
         axs[6].set_title("DeepFool Diff")
         axs[6].axis('off')
+
+        axs[7].imshow(cw_img, cmap='gray')
+        axs[7].set_title("C&W Perturbed")
+        axs[7].axis('off')
+
+        axs[8].imshow(cw_diff, cmap='hot')
+        axs[8].set_title("C&W Difference")
+        axs[8].axis('off')
+
+        axs[9].imshow(universal_img, cmap='gray')
+        axs[9].set_title("Universal Perturbed")
+        axs[9].axis('off')
+
+        axs[10].imshow(universal_diff, cmap='hot')
+        axs[10].set_title("Universal Difference")
+        axs[10].axis('off')
 
         plt.tight_layout()
         plt.savefig(f'img/attacks/attack_example_{i}.png')
@@ -525,28 +647,38 @@ def main():
     (deepfool_acc, deepfool_cm, deepfool_time), deepfool_eval_time = test_deepfool_attack(
         test_loader, device, model, art_classifier)
 
+    # Test C&W attack
+    (cw_acc, cw_cm, cw_time), cw_eval_time = test_cw_attack(
+        test_loader, device, model, art_classifier)
+
+    # Test Universal Perturbation attack
+    (universal_acc, universal_cm, universal_time), universal_eval_time = test_universal_perturbation_attack(
+        test_loader, device, model, art_classifier)
+
     # Plot results
-    plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc, deepfool_cm, deepfool_acc)
+    plot_attack_comparison(clean_cm, clean_acc, fgsm_cm, fgsm_acc, pgd_cm, pgd_acc, deepfool_cm, deepfool_acc, cw_cm, cw_acc, universal_cm, universal_acc)
 
     # Save metrics
     attack_metrics = {
         'Clean': {'accuracy': clean_acc, 'time': clean_time},
         'FGSM': {'accuracy': fgsm_acc, 'time': fgsm_time},
         'PGD': {'accuracy': pgd_acc, 'time': pgd_time},
-        'DeepFool': {'accuracy': deepfool_acc, 'time': deepfool_time}
+        'DeepFool': {'accuracy': deepfool_acc, 'time': deepfool_time},
+        'C&W': {'accuracy': cw_acc, 'time': cw_time},
+        'Universal Perturbation': {'accuracy': universal_acc, 'time': universal_time}
     }
 
     plot_performance_metrics(attack_metrics)
-    save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, clean_time, fgsm_time, pgd_time, deepfool_time)
+    save_metrics(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc, clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time)
 
     # Generate reports
     if train_time is not None:
-        print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, train_time,
-                            clean_time, fgsm_time, pgd_time, deepfool_time)
+        print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc, train_time,
+                            clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time)
     else:
-        print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, 0,
-                            clean_time, fgsm_time, pgd_time, deepfool_time)
-    generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc)
+        print_final_summary(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc, 0,
+                            clean_time, fgsm_time, pgd_time, deepfool_time, cw_time, universal_time)
+    generate_final_report(clean_acc, fgsm_acc, pgd_acc, deepfool_acc, cw_acc, universal_acc)
 
     # Visualize attacks
     print("\n[*] Generating attack visualizations...")
