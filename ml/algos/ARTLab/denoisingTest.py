@@ -107,6 +107,34 @@ print("Création du dataset...")
 dataset = ComparisonDataset(NATURAL_DIR, poisoned_dirs, PROCESSED_DIR, transform=transform)
 print(f"\nDataset créé avec {len(dataset)} échantillons valides")
 
+class DenoisingAutoencoder(nn.Module):
+    def __init__(self):
+        super(DenoisingAutoencoder, self).__init__()
+        self.encoder = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.decoder = nn.Sequential(
+            nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.ReLU(),
+            nn.ConvTranspose2d(32, 1, kernel_size=3, stride=2, padding=1, output_padding=1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+
 class AttackDetector(nn.Module):
     def __init__(self):
         super(AttackDetector, self).__init__()
@@ -141,14 +169,12 @@ class AttackDetector(nn.Module):
             nn.MaxPool2d(2)
         )
 
-        # Fusion des features
         self.fusion = nn.Sequential(
             nn.Conv2d(256, 128, kernel_size=1),
             nn.BatchNorm2d(128),
             nn.ReLU()
         )
 
-        # Classificateur
         self.classifier = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Flatten(),
@@ -167,7 +193,110 @@ class AttackDetector(nn.Module):
         output = self.classifier(fused)
         return output
 
-def train_epoch(model, dataloader, criterion, optimizer, device):
+class DenoisedAttackDetector(nn.Module):
+    def __init__(self):
+        super(DenoisedAttackDetector, self).__init__()
+
+        self.original_branch = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+
+        self.processed_branch = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+
+        self.denoised_branch = nn.Sequential(
+            nn.Conv2d(1, 32, kernel_size=3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+
+        self.fusion = nn.Sequential(
+            nn.Conv2d(384, 128, kernel_size=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU()
+        )
+
+        self.classifier = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(64, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, original, processed, denoised):
+        orig_features = self.original_branch(original)
+        proc_features = self.processed_branch(processed)
+        denoised_features = self.denoised_branch(denoised)
+        combined = torch.cat([orig_features, proc_features, denoised_features], dim=1)
+        fused = self.fusion(combined)
+        output = self.classifier(fused)
+        return output
+
+def train_denoising_autoencoder(model, dataloader, criterion, optimizer, device, epochs=20):
+    model.train()
+    for epoch in range(epochs):
+        running_loss = 0.0
+        for batch in tqdm(dataloader, desc=f"Denoising Epoch {epoch+1}/{epochs}"):
+            images = batch['original'].to(device)
+            noisy_images = images + 0.1 * torch.randn_like(images)
+            noisy_images = torch.clamp(noisy_images, 0., 1.)
+
+            optimizer.zero_grad()
+            outputs = model(noisy_images)
+            loss = criterion(outputs, images)
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
+
+        print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(dataloader):.4f}")
+
+def apply_denoising(model, dataloader, device):
+    model.eval()
+    denoised_images = []
+    with torch.no_grad():
+        for batch in tqdm(dataloader, desc="Applying denoising"):
+            images = batch['original'].to(device)
+            denoised = model(images)
+            denoised_images.append(denoised.cpu())
+    return torch.cat(denoised_images, dim=0)
+
+def train_epoch(model, dataloader, criterion, optimizer, device, use_denoising=False):
     model.train()
     running_loss = 0.0
     correct = 0
@@ -181,9 +310,14 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
         processed = batch['processed'].to(device)
         labels = batch['label'].float().to(device).view(-1, 1)
 
-        optimizer.zero_grad()
-        outputs = model(original, processed)
+        if use_denoising:
+            denoised = batch['denoised'].to(device)
+            outputs = model(original, processed, denoised)
+        else:
+            outputs = model(original, processed)
+
         loss = criterion(outputs, labels)
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
@@ -206,7 +340,7 @@ def train_epoch(model, dataloader, criterion, optimizer, device):
 
     return epoch_loss, epoch_acc, roc_auc, pr_auc, all_labels, all_preds, all_probs
 
-def evaluate(model, dataloader, criterion, device):
+def evaluate(model, dataloader, criterion, device, use_denoising=False):
     model.eval()
     running_loss = 0.0
     correct = 0
@@ -221,7 +355,12 @@ def evaluate(model, dataloader, criterion, device):
             processed = batch['processed'].to(device)
             labels = batch['label'].float().to(device).view(-1, 1)
 
-            outputs = model(original, processed)
+            if use_denoising:
+                denoised = batch['denoised'].to(device)
+                outputs = model(original, processed, denoised)
+            else:
+                outputs = model(original, processed)
+
             loss = criterion(outputs, labels)
 
             running_loss += loss.item()
@@ -244,7 +383,6 @@ def evaluate(model, dataloader, criterion, device):
     return epoch_loss, epoch_acc, auc_score, pr_auc, all_labels, all_preds, fpr, tpr, precision, recall
 
 def get_classification_report(labels, preds, target_names=['Naturel', 'Attaqué']):
-    """Génère un rapport de classification avec gestion des divisions par zéro"""
     try:
         report = classification_report(labels, preds, target_names=target_names, output_dict=True, zero_division=0)
         return report
@@ -271,12 +409,50 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
     test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
 
-    model = AttackDetector().to(DEVICE)
+    denoising_model = DenoisingAutoencoder().to(DEVICE)
+    denoising_criterion = nn.MSELoss()
+    denoising_optimizer = optim.Adam(denoising_model.parameters(), lr=0.001)
+
+    print("\nEntraînement de l'autoencodeur de débroitage...")
+    train_denoising_autoencoder(denoising_model, train_loader, denoising_criterion, denoising_optimizer, DEVICE)
+
+    print("\nApplication du débroitage aux images...")
+    denoised_images = apply_denoising(denoising_model, train_loader, DEVICE)
+
+    class DenoisedDataset(Dataset):
+        def __init__(self, original_dataset, denoised_images):
+            self.original_dataset = original_dataset
+            self.denoised_images = denoised_images
+
+        def __len__(self):
+            return len(self.original_dataset)
+
+        def __getitem__(self, idx):
+            item = self.original_dataset[idx]
+            denoised_img = self.denoised_images[idx]
+            return {
+                'original': item['original'],
+                'processed': item['processed'],
+                'denoised': denoised_img,
+                'label': item['label'],
+                'path': item['path']
+            }
+
+    denoised_train_dataset = DenoisedDataset(train_dataset, denoised_images)
+    denoised_train_loader = DataLoader(denoised_train_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+
+    denoised_val_dataset = DenoisedDataset(val_dataset, denoised_images[:len(val_dataset)])
+    denoised_val_loader = DataLoader(denoised_val_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+
+    denoised_test_dataset = DenoisedDataset(test_dataset, denoised_images[:len(test_dataset)])
+    denoised_test_loader = DataLoader(denoised_test_dataset, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+
+    print("\nDébut de l'entraînement avec débroitage...")
+    denoised_model = DenoisedAttackDetector().to(DEVICE)
     criterion = nn.BCELoss()
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    optimizer = optim.Adam(denoised_model.parameters(), lr=LEARNING_RATE)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
 
-    print("\nDébut de l'entraînement...")
     best_val_loss = float('inf')
     train_losses = []
     val_losses = []
@@ -286,18 +462,15 @@ if __name__ == '__main__':
     val_pr_aucs = []
     train_metrics_per_class = []
     val_metrics_per_class = []
-    all_train_preds = []
-    all_val_preds = []
 
     for epoch in range(EPOCHS):
         train_loss, train_acc, train_auc, train_pr_auc, train_labels, train_preds, train_probs = train_epoch(
-            model, train_loader, criterion, optimizer, DEVICE)
+            denoised_model, denoised_train_loader, criterion, optimizer, DEVICE, use_denoising=True)
         train_losses.append(train_loss)
         train_accs.append(train_acc)
 
-        # Validation
         val_loss, val_acc, val_auc, val_pr_auc, val_labels, val_preds, fpr, tpr, precision, recall = evaluate(
-            model, val_loader, criterion, DEVICE)
+            denoised_model, denoised_val_loader, criterion, DEVICE, use_denoising=True)
         val_losses.append(val_loss)
         val_accs.append(val_acc)
         val_aucs.append(val_auc)
@@ -307,7 +480,7 @@ if __name__ == '__main__':
 
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), 'best_attack_detector.pth')
+            torch.save(denoised_model.state_dict(), 'best_denoised_attack_detector.pth')
 
         train_report = get_classification_report(train_labels, train_preds)
         val_report = get_classification_report(val_labels, val_preds)
@@ -332,301 +505,22 @@ if __name__ == '__main__':
             'attacked_f1': val_report['Attaqué']['f1-score']
         })
 
-        all_train_preds.append({
-            'epoch': epoch+1,
-            'labels': train_labels,
-            'preds': train_preds,
-            'probs': train_probs
-        })
-
-        all_val_preds.append({
-            'epoch': epoch+1,
-            'labels': val_labels,
-            'preds': val_preds,
-            'probs': [p[0] for p in zip(*train_probs)] if train_probs else []
-        })
-
         print(f"\nEpoch {epoch+1}/{EPOCHS}")
         print(f"Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.4f}, Train AUC: {train_auc:.4f}, Train PR AUC: {train_pr_auc:.4f}")
         print(f"Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.4f}, Val AUC: {val_auc:.4f}, Val PR AUC: {val_pr_auc:.4f}")
 
-        print("\nMétriques par classe (Train):")
-        print(f"Naturel - P: {train_report['Naturel']['precision']:.4f}, R: {train_report['Naturel']['recall']:.4f}, F1: {train_report['Naturel']['f1-score']:.4f}")
-        print(f"Attaqué - P: {train_report['Attaqué']['precision']:.4f}, R: {train_report['Attaqué']['recall']:.4f}, F1: {train_report['Attaqué']['f1-score']:.4f}")
-
-        print("\nMétriques par classe (Val):")
-        print(f"Naturel - P: {val_report['Naturel']['precision']:.4f}, R: {val_report['Naturel']['recall']:.4f}, F1: {val_report['Naturel']['f1-score']:.4f}")
-        print(f"Attaqué - P: {val_report['Attaqué']['precision']:.4f}, R: {val_report['Attaqué']['recall']:.4f}, F1: {val_report['Attaqué']['f1-score']:.4f}")
-
-    print("\nChargement du meilleur modèle pour l'évaluation finale...")
-    model.load_state_dict(torch.load('best_attack_detector.pth'))
+    print("\nChargement du meilleur modèle avec débroitage pour l'évaluation finale...")
+    denoised_model.load_state_dict(torch.load('best_denoised_attack_detector.pth'))
 
     test_loss, test_acc, test_auc, test_pr_auc, test_labels, test_preds, fpr, tpr, precision, recall = evaluate(
-        model, test_loader, criterion, DEVICE)
+        denoised_model, denoised_test_loader, criterion, DEVICE, use_denoising=True)
 
-    print("\nRésultats finaux sur le test:")
+    print("\nRésultats finaux sur le test (modèle avec débroitage):")
     print(f"Test Loss: {test_loss:.4f}")
     print(f"Test Accuracy: {test_acc:.4f}")
     print(f"Test AUC: {test_auc:.4f}")
     print(f"Test PR AUC: {test_pr_auc:.4f}")
 
-    print("\nRapport de classification:")
-    test_report = get_classification_report(test_labels, test_preds)
-    print(classification_report(test_labels, test_preds, target_names=['Naturel', 'Attaqué'], zero_division=0))
-
-    cm = confusion_matrix(test_labels, test_preds)
-    plt.figure(figsize=(6, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=['Naturel', 'Attaqué'],
-                yticklabels=['Naturel', 'Attaqué'])
-    plt.title('Matrice de confusion')
-    plt.xlabel('Prédit')
-    plt.ylabel('Vrai')
-    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
-    plt.close()
-
-    plt.figure(figsize=(8, 6))
-    plt.plot(fpr, tpr, label=f'AUC = {test_auc:.2f}')
-    plt.plot([0, 1], [0, 1], 'k--')
-    plt.xlabel('Taux de faux positifs')
-    plt.ylabel('Taux de vrais positifs')
-    plt.title('Courbe ROC')
-    plt.legend()
-    plt.savefig(os.path.join(output_dir, 'roc_curve.png'))
-    plt.close()
-
-    plt.figure(figsize=(8, 6))
-    plt.plot(recall, precision, label=f'PR AUC = {test_pr_auc:.2f}')
-    plt.xlabel('Recall')
-    plt.ylabel('Precision')
-    plt.title('Courbe Precision-Recall')
-    plt.legend()
-    plt.savefig(os.path.join(output_dir, 'precision_recall_curve.png'))
-    plt.close()
-
-    plt.figure(figsize=(15, 10))
-    plt.subplot(2, 2, 1)
-    plt.plot(train_losses, label='Train Loss')
-    plt.plot(val_losses, label='Val Loss')
-    plt.title('Perte par epoch')
-    plt.legend()
-
-    plt.subplot(2, 2, 2)
-    plt.plot(train_accs, label='Train Acc')
-    plt.plot(val_accs, label='Val Acc')
-    plt.title('Précision par epoch')
-    plt.legend()
-
-    plt.subplot(2, 2, 3)
-    plt.plot(val_aucs, label='Val AUC')
-    plt.title('AUC par epoch')
-    plt.legend()
-
-    plt.subplot(2, 2, 4)
-    plt.plot(val_pr_aucs, label='Val PR AUC')
-    plt.title('PR AUC par epoch')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'training_curves.png'))
-    plt.close()
-
-    train_metrics_df = pd.DataFrame(train_metrics_per_class)
-    val_metrics_df = pd.DataFrame(val_metrics_per_class)
-
-    plt.figure(figsize=(15, 10))
-    plt.subplot(2, 2, 1)
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['natural_precision'], label='Train Naturel')
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['attacked_precision'], label='Train Attaqué')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['natural_precision'], '--', label='Val Naturel')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['attacked_precision'], '--', label='Val Attaqué')
-    plt.title('Précision par classe')
-    plt.legend()
-
-    plt.subplot(2, 2, 2)
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['natural_recall'], label='Train Naturel')
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['attacked_recall'], label='Train Attaqué')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['natural_recall'], '--', label='Val Naturel')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['attacked_recall'], '--', label='Val Attaqué')
-    plt.title('Rappel par classe')
-    plt.legend()
-
-    plt.subplot(2, 2, 3)
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['natural_f1'], label='Train Naturel')
-    plt.plot(train_metrics_df['epoch'], train_metrics_df['attacked_f1'], label='Train Attaqué')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['natural_f1'], '--', label='Val Naturel')
-    plt.plot(val_metrics_df['epoch'], val_metrics_df['attacked_f1'], '--', label='Val Attaqué')
-    plt.title('F1-score par classe')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'class_metrics.png'))
-    plt.close()
-
-    plt.figure(figsize=(12, 6))
-    plt.subplot(1, 2, 1)
-    plt.plot(val_metrics_df['epoch'],
-             val_metrics_df['natural_f1'] - val_metrics_df['attacked_f1'],
-             label='Différence F1 (Naturel - Attaqué)')
-    plt.axhline(0, color='red', linestyle='--')
-    plt.title('Différence de F1-score entre classes')
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    error_ratios = []
-    for epoch_data in all_val_preds:
-        labels = np.array(epoch_data['labels'])
-        preds = np.array(epoch_data['preds'])
-        fp = np.sum((preds == 1) & (labels == 0))
-        fn = np.sum((preds == 0) & (labels == 1))
-        error_ratios.append(fp / fn if fn != 0 else float('inf'))
-
-    plt.plot(range(1, EPOCHS+1), error_ratios, label='Ratio FP/FN')
-    plt.axhline(1, color='red', linestyle='--')
-    plt.title('Ratio des erreurs (FP/FN)')
-    plt.legend()
-
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'classification_difficulty.png'))
-    plt.close()
-
-    # Visualisation de quelques prédictions
-    def visualize_predictions(model, dataloader, device, num_samples=4):
-        model.eval()
-        samples = []
-
-        with torch.no_grad():
-            for batch in dataloader:
-                original = batch['original'].to(device)
-                processed = batch['processed'].to(device)
-                labels = batch['label'].to(device)
-                paths = batch['path']
-
-                outputs = model(original, processed)
-                preds = (outputs > 0.5).float()
-
-                for i in range(original.size(0)):
-                    samples.append({
-                        'original': original[i].cpu(),
-                        'processed': processed[i].cpu(),
-                        'label': labels[i].item(),
-                        'pred': preds[i].item(),
-                        'prob': outputs[i].item(),
-                        'path': paths[i]
-                    })
-
-                if len(samples) >= num_samples:
-                    break
-
-        fig, axes = plt.subplots(num_samples, 3, figsize=(15, num_samples * 3))
-
-        for i, sample in enumerate(samples[:num_samples]):
-            orig_img = sample['original'].squeeze().numpy()
-            axes[i, 0].imshow(orig_img, cmap='gray')
-            axes[i, 0].set_title('Image originale')
-            axes[i, 0].axis('off')
-
-            proc_img = sample['processed'].squeeze().numpy()
-            axes[i, 1].imshow(proc_img, cmap='gray')
-            axes[i, 1].set_title('Image traitée')
-            axes[i, 1].axis('off')
-
-            true_label = 'Naturel' if sample['label'] == 0 else 'Attaqué'
-            pred_label = 'Naturel' if sample['pred'] == 0 else 'Attaqué'
-            color = 'green' if sample['label'] == sample['pred'] else 'red'
-
-            axes[i, 2].text(0.5, 0.5,
-                           f"Vrai: {true_label}\nPrédit: {pred_label}\nProb: {sample['prob']:.2f}",
-                           ha='center', va='center', fontsize=12, color=color)
-            axes[i, 2].set_title('Prédiction')
-            axes[i, 2].axis('off')
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'prediction_samples.png'))
-        plt.close()
-
-    print("\nExemples de prédictions:")
-    visualize_predictions(model, test_loader, DEVICE)
-
-    # Analyse des erreurs
-    def analyze_errors(model, dataloader, device):
-        model.eval()
-        errors = []
-        all_labels = []
-        all_preds = []
-
-        with torch.no_grad():
-            for batch in dataloader:
-                original = batch['original'].to(device)
-                processed = batch['processed'].to(device)
-                labels = batch['label'].to(device)
-                paths = batch['path']
-
-                outputs = model(original, processed)
-                preds = (outputs > 0.5).float()
-
-                all_labels.extend(labels.cpu().numpy())
-                all_preds.extend(preds.cpu().numpy())
-
-                for i in range(original.size(0)):
-                    if preds[i] != labels[i]:
-                        errors.append({
-                            'original': original[i].cpu(),
-                            'processed': processed[i].cpu(),
-                            'true_label': labels[i].item(),
-                            'pred_label': preds[i].item(),
-                            'prob': outputs[i].item(),
-                            'path': paths[i],
-                            'error_type': 'FP' if preds[i] == 1 else 'FN'
-                        })
-
-        all_labels = np.array(all_labels)
-        all_preds = np.array(all_preds)
-
-        fp = np.sum((all_preds == 1) & (all_labels == 0))
-        fn = np.sum((all_preds == 0) & (all_labels == 1))
-
-        fp_errors = [e for e in errors if e['error_type'] == 'FP']
-        fn_errors = [e for e in errors if e['error_type'] == 'FN']
-
-        print(f"\nNombre total d'erreurs: {len(errors)}")
-        print(f"Faux positifs (FP): {fp} (dont {len(fp_errors)} dans les erreurs stockées)")
-        print(f"Faux négatifs (FN): {fn} (dont {len(fn_errors)} dans les erreurs stockées)")
-
-        num_errors_to_show = min(4, len(errors))
-        fig, axes = plt.subplots(num_errors_to_show, 3, figsize=(15, num_errors_to_show * 3))
-
-        for i, error in enumerate(errors[:num_errors_to_show]):
-            orig_img = error['original'].squeeze().numpy()
-            axes[i, 0].imshow(orig_img, cmap='gray')
-            axes[i, 0].set_title('Image originale')
-            axes[i, 0].axis('off')
-
-            proc_img = error['processed'].squeeze().numpy()
-            axes[i, 1].imshow(proc_img, cmap='gray')
-            axes[i, 1].set_title('Image traitée')
-            axes[i, 1].axis('off')
-
-            true_label = 'Naturel' if error['true_label'] == 0 else 'Attaqué'
-            pred_label = 'Naturel' if error['pred_label'] == 0 else 'Attaqué'
-            color = 'red'
-
-            axes[i, 2].text(0.5, 0.5,
-                           f"Vrai: {true_label}\nPrédit: {pred_label}\nProb: {error['prob']:.2f}\nType: {error['error_type']}",
-                           ha='center', va='center', fontsize=12, color=color)
-            axes[i, 2].set_title('Erreur')
-            axes[i, 2].axis('off')
-
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'error_analysis.png'))
-        plt.close()
-
-        return errors
-
-    print("\nAnalyse des erreurs:")
-    errors = analyze_errors(model, test_loader, DEVICE)
-
-    # Sauvegarde des métriques
     metrics_df = pd.DataFrame({
         'Epoch': range(1, EPOCHS+1),
         'Train Loss': train_losses,
@@ -643,5 +537,5 @@ if __name__ == '__main__':
         'Attacked F1': [m['attacked_f1'] for m in val_metrics_per_class]
     })
 
-    metrics_df.to_csv(os.path.join(output_dir, 'training_metrics.csv'), index=False)
-    print(f"\nMétriques sauvegardées dans {os.path.join(output_dir, 'training_metrics.csv')}")
+    metrics_df.to_csv(os.path.join(output_dir, 'denoised_training_metrics.csv'), index=False)
+    print(f"\nMétriques sauvegardées dans {os.path.join(output_dir, 'denoised_training_metrics.csv')}")

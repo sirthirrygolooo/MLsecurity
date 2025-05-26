@@ -6,3 +6,12 @@
 /.venv/
 ml/algos/ARTLab/model/brain_mri_model.pth
 /ml/algos/ARTLab/model/*.pth
+/ml/algos/ARTLab/*/*.pth
+/ml/algos/ARTLab/*.pth
+/ml/algos/ARTLab/noise_stegano/
+/ml/algos/ARTLab/steg_dataset/
+/ml/algos/ARTLab/noise_stegano_median/
+/ml/algos/ARTLab/lsb_zero/
+/ml/algos/ARTLab/median_adaptive_stegano/
+/ml/algos/ARTLab/results/steg/comparison/*/*.pth
+/ml/algos/ARTLab/results/steg/comparison/*/*/*.pth

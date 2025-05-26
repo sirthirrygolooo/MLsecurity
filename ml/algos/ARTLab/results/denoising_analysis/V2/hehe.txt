@@ -1,0 +1,5 @@
+Résultats de l'analyse :
+    Epsilon  Confiance avant débruitage  Confiance après débruitage
+0    normal                    0.186990                    0.578125
+1   eps_0.1                    0.132849                    0.831083
+2  eps_0.02                    0.179783                    0.591853

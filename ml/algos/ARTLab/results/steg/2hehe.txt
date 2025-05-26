@@ -1,0 +1,12 @@
+Test Loss: 0.5743, Test Accuracy: 0.8050
+F1 Score: 0.8064
+              precision    recall  f1-score   support
+
+        LMCI       0.69      0.77      0.73       764
+          CN       0.94      0.92      0.93       561
+        EMCI       0.83      0.78      0.80       836
+          AD       0.81      0.79      0.80       839
+
+    accuracy                           0.81      3000
+   macro avg       0.82      0.81      0.81      3000
+weighted avg       0.81      0.81      0.81      3000
