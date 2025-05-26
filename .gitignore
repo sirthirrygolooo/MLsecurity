@@ -15,3 +15,5 @@ ml/algos/ARTLab/model/brain_mri_model.pth
 /ml/algos/ARTLab/median_adaptive_stegano/
 /ml/algos/ARTLab/results/steg/comparison/*/*.pth
 /ml/algos/ARTLab/results/steg/comparison/*/*/*.pth
+/ml/algos/ARTLab/denoised_img/
+/ml/algos/ARTLab/*_dataset/

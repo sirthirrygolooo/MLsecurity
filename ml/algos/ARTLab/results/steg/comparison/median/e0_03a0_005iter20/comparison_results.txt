@@ -1,0 +1,30 @@
+
+Dataset: original
+==================================================
+Final Training Accuracy: 0.9401
+Test Loss: 0.6709
+Test Accuracy: 0.7853
+F1 Score: 0.7857
+
+Classification Report:
+                 EMCI          AD          CN        LMCI  accuracy    macro avg  weighted avg
+precision    0.835635    0.722717    0.919440    0.714994  0.785333     0.798196      0.790627
+recall       0.710094    0.815327    0.909879    0.744516  0.785333     0.794954      0.785333
+f1-score     0.767766    0.766234    0.914634    0.729456  0.785333     0.794523      0.785711
+support    852.000000  796.000000  577.000000  775.000000  0.785333  3000.000000   3000.000000
+
+
+Dataset: noise_stegano
+==================================================
+Final Training Accuracy: 0.7990
+Test Loss: 0.7344
+Test Accuracy: 0.6867
+F1 Score: 0.6847
+
+Classification Report:
+                 EMCI          AD          CN        LMCI  accuracy    macro avg  weighted avg
+precision    0.671117    0.653846    0.877342    0.587234  0.686667     0.697385      0.684529
+recall       0.649061    0.726131    0.892548    0.534194  0.686667     0.700483      0.686667
+f1-score     0.659905    0.688095    0.884880    0.559459  0.686667     0.698085      0.684706
+support    852.000000  796.000000  577.000000  775.000000  0.686667  3000.000000   3000.000000
+
