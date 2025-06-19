@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import random
+import string
 from tqdm import tqdm
 from scipy.ndimage import generic_filter, median_filter
 
@@ -31,47 +33,54 @@ def calculate_texture_measure(image, x, y):
     return np.std(neighborhood)
 
 def determine_message_size(noise_level):
-    if noise_level < 2000:
+    if noise_level < 10000:
         return 2000
-    elif noise_level < 2200:
+    elif noise_level < 13000:
         return 500
-    elif noise_level < 2500:
+    elif noise_level < 15000:
         return 100
     else:
         return 20
 
+def generate_random_message(length):
+    """Generate a random message of specified length"""
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for _ in range(length))
+
 def adaptive_steganography(image, message):
-    message += '$t3g0'
+    # conversion message en bits
     message_bits = ''.join(format(ord(char), '08b') for char in message)
-    message_bits += '0' * ((len(message_bits) % 8) % 8)
-
-    # Calculate texture map using median filter residual
-    median_img = median_filter(image, size=3)
-    residual = np.abs(image - median_img)
-    texture_map = generic_filter(residual, np.std, size=3)
-
-    # Normalize texture values for embedding strength
-    texture_map = (texture_map - texture_map.min()) / (texture_map.max() - texture_map.min() + 1e-6)
-
-    bit_index = 0
+    message_index = 0
     stego_image = image.copy()
+    height, width = image.shape
 
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            if bit_index >= len(message_bits):
-                break
+    # masque pour pas modif. plusieurs fois le même pixel
+    used = np.zeros_like(image, dtype=bool)
 
-            # Determine embedding strength based on texture (1-4 bits)
-            embedding_strength = int(texture_map[i,j] * 3) + 1
+    # boucle de balayage
+    for x in range(1, height - 1):
+        for y in range(1, width - 1):
+            if message_index >= len(message_bits):
+                return stego_image
 
-            for k in range(min(embedding_strength, len(message_bits) - bit_index)):
-                if bit_index >= len(message_bits):
-                    break
+            if used[x, y]:
+                continue
 
-                # Modify LSBs based on embedding strength
-                mask = ~(1 << k)
-                stego_image[i,j] = (stego_image[i,j] & mask) | (int(message_bits[bit_index]) << k)
-                bit_index += 1
+            texture = calculate_texture_measure(image, x, y)
+
+            # Seuil de texture : on encode seulement si la zone est texturée
+            if texture > 10:
+                original_pixel = image[x, y]
+                lsb = int(message_bits[message_index])
+                new_pixel = (original_pixel & ~1) | lsb  # Remplacer le LSB par le bit du message
+
+                stego_image[x, y] = new_pixel
+                used[x, y] = True
+                message_index += 1
+
+    # Si tout le message n'a pas été caché
+    if message_index < len(message_bits):
+        print(f"Attention : seulement {message_index} bits sur {len(message_bits)} ont été insérés.")
 
     return stego_image
 
@@ -124,13 +133,11 @@ for index, row in tqdm(annotations.iterrows(), total=len(annotations), desc="Tra
 
     noise_level_before = estimate_noise_median(image)
     message_size = determine_message_size(noise_level_before)
-    message = "SecretMessage" * (message_size // 14)
+
+    message = generate_random_message(message_size)
 
     stego_image = adaptive_steganography(image, message)
     noise_level_after = estimate_noise_median(stego_image)
-
-    # Visualization
-    #visualize_comparison(image, stego_image, noise_level_before, noise_level_after, index)
 
     new_img_file = os.path.join(new_img_path, f"image_{index}.png")
     cv2.imwrite(new_img_file, stego_image)

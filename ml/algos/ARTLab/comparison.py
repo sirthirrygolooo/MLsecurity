@@ -13,14 +13,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-OUTPUT_DIR = 'results/steg/comparison/lsb'
+OUTPUT_DIR = 'results/steg/comparison/'
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 datasets = {
-    'original': 'steg_dataset',
-    'noise_stegano': 'lsb_zero',
+    'clean': 'steg_dataset_clean',
+    'attacked': 'steg_dataset',
+    'stegano': 'noise_stegano',
 }
 
 BATCH_SIZE = 32

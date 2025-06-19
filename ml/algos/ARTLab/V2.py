@@ -18,7 +18,7 @@ from art.attacks.evasion import FastGradientMethod, ProjectedGradientDescent
 EPSILON = 0.02
 
 def setup_environment():
-    """Setup the environment by checking dataset and renaming images if necessary."""
+    """setup the environment by checking dataset, moving images and renaming images"""
     if not os.path.exists('adni_dataset2/AugmentedAlzheimerDataset/AD/AD-0001.jpg'):
         if not os.path.exists('adni_dataset2'):
             print('Dataset Missing, run setup.py ? [y/N]')
@@ -38,7 +38,7 @@ def setup_environment():
         rename_images_in_directory('adni_dataset2/AugmentedAlzheimerDataset/LMCI', 'LMCI')
 
 def rename_images_in_directory(directory_path, prefix):
-    """Rename images in the directory with a given prefix."""
+    """rename images in the directory with a given prefix."""
     files = sorted(os.listdir(directory_path))
     for counter, filename in enumerate(files, start=1):
         new_name = f"{prefix}-{counter:04d}{os.path.splitext(filename)[1]}"
@@ -124,24 +124,36 @@ def prepare_data(csv_file, root_dir, transform):
     return train_loader, test_loader, train_dataset, test_dataset
 
 class Net(nn.Module):
-    """CNN model for classification."""
+    """CNN pour la classification des images selon les 4 diagnostics."""
+
     def __init__(self):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
-        self.pool = nn.MaxPool2d(2, 2)
-        dummy_input = torch.zeros(1, 1, 200, 190)
+        # conv 1 : 1 entree (grayscale), 32 filtres 3x3 avec padding=1 (pour garder la taille)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=32, kernel_size=3, padding=1)
+        # conv 2 : 32 entrees, 64 filtres 3x3 avec padding=1
+        self.conv2 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        # maxpooling : réduit la taille spatiale de moitié (2x2) -> pour réduire la complexité
+        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
+        dummy_input = torch.zeros(1, 1, 200, 190)  # Image fictive : 1 canal, 200x190 -> taille d'entrée
         dummy_output = self.pool(torch.relu(self.conv2(self.pool(torch.relu(self.conv1(dummy_input))))))
-        flattened_size = dummy_output.view(-1).shape[0]
+        flattened_size = dummy_output.view(-1).shape[0]  # taille après convolution + pooling
+        # couche fully connected 1 : vers 512 neurones
         self.fc1 = nn.Linear(flattened_size, 512)
+        # couche FC 2 : vers 4 neurones (logits pour 4 classes) -> classifications finales
         self.fc2 = nn.Linear(512, 4)
+        # dropout pour reduire le sur-apprentissage
         self.dropout = nn.Dropout(0.5)
 
     def forward(self, x):
+        # conv1 + ReLU + MaxPool
         x = self.pool(torch.relu(self.conv1(x)))
+        # conv2 + ReLU + MaxPool
         x = self.pool(torch.relu(self.conv2(x)))
+        # mec pour couches FC : aplatir la sortie des convolutions
         x = x.view(x.size(0), -1)
+        # FC1 + ReLU + Dropout
         x = self.dropout(torch.relu(self.fc1(x)))
+        # sortie : retourne 4 logits pour les 4 classes
         return self.fc2(x)
 
 @timeit

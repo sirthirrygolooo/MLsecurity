@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from tqdm import tqdm
 
-steg_dataset_path = 'steg_dataset'
-noise_stegano_dataset_path = 'noise_stegano'
+steg_dataset_path = 'steg_dataset_df'
+noise_stegano_dataset_path = 'noise_stegano_df'
 comparison_path = 'noise_stegano/comparison_images'
 os.makedirs(comparison_path, exist_ok=True)
 os.makedirs(noise_stegano_dataset_path, exist_ok=True)

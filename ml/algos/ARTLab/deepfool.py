@@ -6,16 +6,17 @@ from torchvision import transforms, datasets
 from PIL import Image
 import pandas as pd
 from tqdm import tqdm
+import numpy as np
 
 original_dataset_path = 'adni_dataset2/AugmentedAlzheimerDataset'
-steg_dataset_path = 'steg_dataset'
+steg_dataset_path = 'steg_dataset_df'
 os.makedirs(steg_dataset_path, exist_ok=True)
 excel_path = os.path.join(steg_dataset_path, 'train.csv')
 img_path = os.path.join(steg_dataset_path, 'img')
 os.makedirs(img_path, exist_ok=True)
 
 percentage_altered = 20
-size = 10000
+size = 1000
 
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
@@ -58,30 +59,56 @@ class Net(nn.Module):
 model = Net()
 criterion = nn.CrossEntropyLoss()
 
-def pgd_attack(image, epsilon, alpha, num_iter, label):
-    perturbed_image = image.clone().detach()
-    for _ in range(num_iter):
-        perturbed_image.requires_grad = True
-        output = model(perturbed_image)
-        loss = criterion(output, torch.tensor([label]))
-        model.zero_grad()
-        loss.backward()
-        data_grad = perturbed_image.grad.data
-        perturbed_image = perturbed_image + alpha * data_grad.sign()
-        perturbed_image = torch.clamp(perturbed_image, image - epsilon, image + epsilon)
-        perturbed_image = torch.clamp(perturbed_image, 0, 1)
-        perturbed_image = perturbed_image.detach()
-    return perturbed_image
+def deepfool_attack(image, model, num_classes=4, overshoot=0.02, max_iter=50):
+    """
+    Args:
+        image: Input image tensor
+        model: Model to attack
+        num_classes: Number of classes in the model
+        overshoot: Overshoot parameter for DeepFool
+        max_iter: Maximum number of iterations
 
-epsilon = 0.03
-alpha = 0.005
-num_iter = 20
+    """
+    image = image.clone().detach()
+    image.requires_grad = True
+
+    fs = model(image)
+    fs_list = [fs[0, i] for i in range(num_classes)]
+    o = torch.argmax(fs.data, 1)
+
+    iter = 0
+    while o == torch.argmax(fs.data, 1) and iter < max_iter:
+        pert = torch.zeros_like(image)
+        fs[0, o].backward(retain_graph=True)
+        grad_orig = image.grad.data.clone()
+
+        for k in range(num_classes):
+            if k == o:
+                continue
+
+            image.grad.data.zero_()
+            fs[0, k].backward(retain_graph=True)
+            grad = image.grad.data.clone()
+
+            w = grad - grad_orig
+            f = (fs[0, k] - fs[0, o]).data
+
+            pert += (f.abs() / w.norm()) * w / w.norm()
+
+        pert = (1 + overshoot) * pert / pert.norm()
+        image.data += pert
+
+        fs = model(image)
+        o = torch.argmax(fs.data, 1)
+        iter += 1
+
+    return image.detach()
 
 excel_data = []
 
 for i, (image, label) in tqdm(enumerate(dataloader), total=num_images, desc="Traitement des images"):
     if i in altered_indices:
-        perturbed_image = pgd_attack(image, epsilon, alpha, num_iter, label)
+        perturbed_image = deepfool_attack(image, model)
         image_to_save = transforms.ToPILImage()(perturbed_image.squeeze())
         label_str = "atk"
     else:

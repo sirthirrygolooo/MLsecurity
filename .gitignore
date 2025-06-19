@@ -17,3 +17,10 @@ ml/algos/ARTLab/model/brain_mri_model.pth
 /ml/algos/ARTLab/results/steg/comparison/*/*/*.pth
 /ml/algos/ARTLab/denoised_img/
 /ml/algos/ARTLab/*_dataset/
+/ml/algos/ARTLab/steg_dataset2/
+/ml/algos/ARTLab/steg_dataset_clean/
+/ml/algos/ARTLab/steg_dataset_df/
+/ml/algos/ARTLab/dataset_combined/
+/ml/algos/ARTLab/noise_stegano_df/
+/ml/algos/ARTLab/models/
+/ml/algos/ARTLab/RoadSign/
