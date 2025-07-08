@@ -2,6 +2,8 @@
 
 ## Présentation
 Dataset : [ADNI alzheimer detection](https://www.kaggle.com/datasets/proutkarshtiwari/adni-images-for-alzheimer-detection) par [Utkarsh](https://www.kaggle.com/proutkarshtiwari)
+
+A reupload - il a été supprimé
 ## Analyses
 
 ## Résultats
