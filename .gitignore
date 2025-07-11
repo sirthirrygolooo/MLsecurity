@@ -4,6 +4,7 @@
 /ml/algos/ARTLab/email-phishing-dataset/
 /ml/algos/ARTLab/data/
 /.venv/
+*.pth
 ml/algos/ARTLab/model/brain_mri_model.pth
 /ml/algos/ARTLab/model/*.pth
 /ml/algos/ARTLab/*/*.pth
