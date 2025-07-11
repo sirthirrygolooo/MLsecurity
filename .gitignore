@@ -24,3 +24,5 @@ ml/algos/ARTLab/model/brain_mri_model.pth
 /ml/algos/ARTLab/noise_stegano_df/
 /ml/algos/ARTLab/models/
 /ml/algos/ARTLab/RoadSign/
+/ml/algos/ARTLab/atk_roadsign/
+/ml/algos/ARTLab/model/
