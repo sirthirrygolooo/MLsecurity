@@ -1,6 +1,6 @@
 # Stage - Machine Learning et sécurité
 
-# Diapo soutenance [dispo içi](/docu/Soutenance_stage.pdf)
+# Diapo soutenance : [Soutenance_stage.pdf](./docu/Soutenance_stage.pdf)
 
 ## Présentation
 
